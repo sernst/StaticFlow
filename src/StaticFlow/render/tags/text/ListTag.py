@@ -15,7 +15,7 @@ class ListTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'list'
-    TEMPLATE       = 'vml/list/listBase.mako'
+    TEMPLATE       = 'markup/list/listBase.mako'
     BLOCK_DISPLAY  = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
@@ -123,5 +123,5 @@ class ListTag(MarkupBlockTag):
         a.render['listTag'] = 'ol' if self.isOrdered else 'ul'
 
         if self._procedural:
-            self._renderTemplate = 'vml/list/nakedList.mako'
+            self._renderTemplate = 'markup/list/nakedList.mako'
 

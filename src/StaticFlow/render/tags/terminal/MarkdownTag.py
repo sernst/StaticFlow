@@ -15,7 +15,7 @@ class MarkdownTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'markdown'
-    TEMPLATE       = 'shared/vml/empty.mako'
+    TEMPLATE       = 'markup/empty.mako'
     LEAF_TAG       = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES
 

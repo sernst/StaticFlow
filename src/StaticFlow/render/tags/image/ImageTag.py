@@ -15,7 +15,7 @@ class ImageTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG             = 'image'
-    TEMPLATE        = 'vml/image/imageBase.mako'
+    TEMPLATE        = 'markup/image/imageBase.mako'
     PRIMARY_ATTR = TagAttributesEnum.URL[0]
 
 #===================================================================================================

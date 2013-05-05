@@ -13,7 +13,7 @@ class JumpTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'jump'
-    TEMPLATE       = 'shared/vml/spanBase.mako'
+    TEMPLATE       = 'markup/spanBase.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.TO[0]

@@ -15,7 +15,7 @@ class RawTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'raw'
-    TEMPLATE       = 'vml/raw/rawDefault.mako'
+    TEMPLATE       = 'markup/raw/rawDefault.mako'
     LEAF_TAG       = True
     BLOCK_DISPLAY  = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES

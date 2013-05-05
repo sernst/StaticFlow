@@ -67,7 +67,7 @@ class BorderTag(BoxTag):
         if merge:
             self._populateBorder(cs[0])
             cs[0].attrs.join(self.attrs)
-            self.renderTemplate = 'shared/vml/empty.mako'
+            self.renderTemplate = 'markup/empty.mako'
             self._mergedToChild = True
             BoxTag._renderImpl(self, skipBackground=True, paddingDef=GeneralSizeEnum.none[0])
 

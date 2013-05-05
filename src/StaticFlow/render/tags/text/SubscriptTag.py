@@ -13,7 +13,7 @@ class SubscriptTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'sub'
-    TEMPLATE       = 'vml/text/subscript.mako'
+    TEMPLATE       = 'markup/text/subscript.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
 

@@ -15,7 +15,7 @@ class HeaderTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'header'
-    TEMPLATE       = 'shared/vml/divBase.mako'
+    TEMPLATE       = 'markup/divBase.mako'
     BLOCK_DISPLAY  = True
     LEAF_TAG       = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL

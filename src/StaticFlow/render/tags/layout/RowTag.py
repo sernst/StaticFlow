@@ -16,7 +16,7 @@ class RowTag(BoxTag):
 #                                                                                       C L A S S
 
     TAG          = 'row'
-    TEMPLATE     = 'vml/box/default.mako'
+    TEMPLATE     = 'markup/box/default.mako'
 
     _COLUMN_UNIT_WIDTH = 64
 

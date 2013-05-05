@@ -18,7 +18,7 @@ class SoundCloudTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG            = 'soundcloud'
-    TEMPLATE       = 'vml/external/soundCloud.mako'
+    TEMPLATE       = 'markup/external/soundCloud.mako'
     BLOCK_DISPLAY  = True
     PRIMARY_ATTR   = TagAttributesEnum.URL[0]
 

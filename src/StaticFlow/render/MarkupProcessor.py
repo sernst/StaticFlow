@@ -14,6 +14,7 @@ from pyaid.web.DomUtils import DomUtils
 from StaticFlow.render.error.MarkupGlobalError import MarkupGlobalError
 from StaticFlow.render.error.MarkupTagError import MarkupTagError
 from StaticFlow.render.tags.MarkupTag import MarkupTag
+from StaticFlow.render.text.MarkupTextBlockUtils import MarkupTextBlockUtils
 
 #___________________________________________________________________________________________________ MarkupProcessor
 class MarkupProcessor(TextAnalyzer):
@@ -59,9 +60,9 @@ class MarkupProcessor(TextAnalyzer):
         debugData = ArgsUtils.extract('debugData', None, kwargs)
         blocks    = {
             'root':[
-                BlockDefinition.createMarkupCommentDef(BlockDefinition.BLOCKED),
-                BlockDefinition.createMarkupOpenDef('quote'),
-                BlockDefinition.createMarkupCloseDef(BlockDefinition.BLOCKED)
+                MarkupTextBlockUtils.createMarkupCommentDef(BlockDefinition.BLOCKED),
+                MarkupTextBlockUtils.createMarkupOpenDef('quote'),
+                MarkupTextBlockUtils.createMarkupCloseDef(BlockDefinition.BLOCKED)
             ],
             'quote':[
                 BlockDefinition.createQuoteDef(BlockDefinition.BLOCKED),
@@ -72,8 +73,17 @@ class MarkupProcessor(TextAnalyzer):
         self._renderErrors = []
         self._tagIndex     = -1
 
-        TextAnalyzer.__init__(self, source, False, blocks, debugData, stripSource=False, **kwargs)
+        TextAnalyzer.__init__(
+            self,
+            source,
+            ArgsUtils.extract('debug', False, kwargs),
+            blocks,
+            debugData,
+            stripSource=False,
+            **kwargs
+        )
 
+        self._log.trace         = True
         self._result            = None
         self._anchors           = []
         self._tags              = []
@@ -210,9 +220,9 @@ class MarkupProcessor(TextAnalyzer):
 
         return s
 
-#___________________________________________________________________________________________________ addVMLError
-    def addVMLError(self, error):
-        self._vmlErrors.append(error)
+#___________________________________________________________________________________________________ addRenderError
+    def addRenderError(self, error):
+        self._renderErrors.append(error)
 
 #___________________________________________________________________________________________________ addAnchor
     def addAnchor(self, anchorData):
@@ -318,7 +328,7 @@ class MarkupProcessor(TextAnalyzer):
 
 #___________________________________________________________________________________________________ _parseArgs
     def _parseArgs(self, **kwargs):
-        self._debug = ArgsUtils.get('debug', False, kwargs)
+        self._debug = ArgsUtils.get('debug', self._debug, kwargs)
         self._allowModelCaching = True
 
 #___________________________________________________________________________________________________ _insertImpl
@@ -345,8 +355,8 @@ class MarkupProcessor(TextAnalyzer):
 
             #---------------------------------------------------------------------------------------
             # Markup Open Case:
-            if g.blockType == BlockSyntaxEnum.Markup_OPEN:
-                self.trace('Creating tag')
+            if g.blockType == MarkupTextBlockUtils.MARKUP_OPEN:
+                self.trace('Creating tag', g)
                 try:
                     t = MarkupTag.createFromBlock(self, g, self.getNextTagIndex())
                 except Exception, err:
@@ -389,7 +399,7 @@ class MarkupProcessor(TextAnalyzer):
 
             #---------------------------------------------------------------------------------------
             # Markup Close Case:
-            elif g.blockType == BlockSyntaxEnum.VIZMEML_CLOSE:
+            elif g.blockType == MarkupTextBlockUtils.MARKUP_CLOSE:
                 matched = False
                 for t in reversed(tags):
                     try:

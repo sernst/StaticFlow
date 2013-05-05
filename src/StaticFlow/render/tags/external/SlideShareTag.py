@@ -16,7 +16,7 @@ class SlideShareTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG            = 'slideshare'
-    TEMPLATE       = 'vml/external/slideShare.mako'
+    TEMPLATE       = 'markup/external/slideShare.mako'
     BLOCK_DISPLAY  = True
     PRIMARY_ATTR   = TagAttributesEnum.URL[0]
 

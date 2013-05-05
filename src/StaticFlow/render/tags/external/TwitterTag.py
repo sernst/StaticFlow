@@ -18,7 +18,7 @@ class TwitterTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG            = 'twitter'
-    TEMPLATE       = 'vml/external/twitter.mako'
+    TEMPLATE       = 'markup/external/twitter.mako'
     BLOCK_DISPLAY  = True
     PRIMARY_ATTR   = TagAttributesEnum.SEARCH[0]
 

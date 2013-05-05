@@ -17,7 +17,7 @@ class ContainerTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'container'
-    TEMPLATE       = 'vml/box/default.mako'
+    TEMPLATE       = 'markup/box/default.mako'
     BLOCK_DISPLAY  = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES

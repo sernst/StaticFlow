@@ -19,7 +19,7 @@ class HuluTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG            = 'hulu'
-    TEMPLATE       = 'vml/external/hulu.mako'
+    TEMPLATE       = 'markup/external/hulu.mako'
     BLOCK_DISPLAY  = True
     PRIMARY_ATTR   = TagAttributesEnum.URL[0]
 

@@ -14,7 +14,7 @@ class HangerTag(BoxTag):
 #                                                                                       C L A S S
 
     TAG           = 'hanger'
-    TEMPLATE      = 'vml/layout/hanger.mako'
+    TEMPLATE      = 'markup/layout/hanger.mako'
     BLOCK_DISPLAY = True
     PRIMARY_ATTR  = TagAttributesEnum.SIDE[0]
 

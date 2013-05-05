@@ -16,7 +16,7 @@ class LinkTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'link'
-    TEMPLATE       = 'shared/vml/anchorBase.mako'
+    TEMPLATE       = 'markup/anchorBase.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.TO[0]

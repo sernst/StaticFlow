@@ -13,7 +13,7 @@ class BoldTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'b'
-    TEMPLATE       = 'shared/vml/spanBase.mako'
+    TEMPLATE       = 'markup/spanBase.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES
 

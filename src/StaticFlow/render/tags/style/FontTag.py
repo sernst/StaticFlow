@@ -18,7 +18,7 @@ class FontTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'font'
-    TEMPLATE       = 'shared/vml/spanBase.mako'
+    TEMPLATE       = 'markup/spanBase.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.FONT[0]
@@ -52,7 +52,7 @@ class FontTag(MarkupBlockTag):
         LayoutAttributeParser.parseScale(a, True, kwargs, useSizeKeys=True)
 
         if LayoutAttributeParser.parseAlignment(a, True, kwargs) is not None:
-            self._renderTemplate = 'shared/vml/divBase.mako'
+            self._renderTemplate = 'markup/divBase.mako'
 
         bold = a.getAsBool(
             TagAttributesEnum.BOLD,

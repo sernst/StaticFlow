@@ -14,7 +14,7 @@ class GridTag(BoxTag):
 #                                                                                       C L A S S
 
     TAG          = 'grid'
-    TEMPLATE     = 'vml/box/default.mako'
+    TEMPLATE     = 'markup/box/default.mako'
 
 #===================================================================================================
 #                                                                                     P U B L I C

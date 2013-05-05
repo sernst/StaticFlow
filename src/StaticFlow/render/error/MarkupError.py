@@ -14,14 +14,13 @@ class MarkupError(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, localizationGroup, defaultCode, defaultGroup, **kwargs):
+    def __init__(self, defaultCode, **kwargs):
         """Creates a new instance of MarkupError."""
 
         self._code = ArgsUtils.get('code', defaultCode, kwargs)
         if not self._code:
             self._code = defaultCode
 
-        self._codeGroup  = ArgsUtils.get('codeGroup', defaultGroup, kwargs)
         self._tag        = ArgsUtils.get('tag', None, kwargs)
         self._block      = ArgsUtils.get('block', self._tag.block if self._tag else None, kwargs)
         self._processor  = ArgsUtils.get('processor', self._tag.processor if self._tag else None, kwargs)
@@ -133,7 +132,7 @@ class MarkupError(object):
 
             self._processor.log.write(logs)
 
-        self._processor.addMarkupError(self)
+        self._processor.addRenderError(self)
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

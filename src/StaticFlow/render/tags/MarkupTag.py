@@ -8,6 +8,7 @@ import inspect
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
+from pyaid.file.FileUtils import FileUtils
 from pyaid.reflection.Reflection import Reflection
 
 from StaticFlow.render.tags.TagDefinitions import TagDefinitions
@@ -30,11 +31,15 @@ class MarkupTag(object):
     _STYLE_ATTR_PATTERN            = re.compile('style=(("[^"]*")|(\'[^\']*\'))')
     _TAG_INSERT_PATTERN            = re.compile('<[^>]+>')
 
+    _ROOT_TEMPLATE_PATH = FileUtils.createPath(
+        FileUtils.getDirectoryOf(__file__), '..', '..', '..', '..', 'templates', isDir=True
+    )
+
     _rootPackage = None
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
-        """ Creates a new instance of ClassTemplate.
+        """ Creates a new instance of MarkupTag.
 
             @@@param attributeSource:string
                 If specified this will be used as the source attribute data for the tag. For
@@ -418,7 +423,7 @@ class MarkupTag(object):
         try:
             name = cls.getTagNameFromBlock(processor, block)
         except Exception, err:
-            pass
+            return None
 
         if MarkupTag._TAG_LIST is None:
             tags = dict()
@@ -433,12 +438,12 @@ class MarkupTag(object):
         if MarkupTag._rootPackage is None:
             MarkupTag._rootPackage = '.'.join(MarkupTag.__module__.split('.')[:-1])
 
-        package = [MarkupTag._rootPackage, classImport[0]]
-        if classImport[1]:
-            package.insert(-1, classImport[1])
+        package = [MarkupTag._rootPackage, classImport.tagClass]
+        if classImport.package:
+            package.insert(-1, classImport.package)
 
-        res = __import__('.'.join(package), globals(), locals(), [classImport[0]])
-        return getattr(res, classImport[0])(processor, block, index, name)
+        res = __import__('.'.join(package), globals(), locals(), [classImport.tagClass])
+        return getattr(res, classImport.tagClass)(processor, block, index, name)
 
 #___________________________________________________________________________________________________ getClassAttr
     def getClassAttr(self, attr, defaultValue =None):
@@ -532,7 +537,12 @@ class MarkupTag(object):
             return u''
 
         try:
-            r = MakoRenderer(self.renderTemplate, data)
+            r = MakoRenderer(
+                template=self.renderTemplate,
+                rootPath=self._ROOT_TEMPLATE_PATH,
+                data=data,
+                logger=self._log
+            )
             r.render(tag=self, data=self.attrs)
         except Exception, err:
             name = self.__class__.__name__

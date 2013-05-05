@@ -2,7 +2,7 @@
 ## (C)2012
 ## Eric D. Wills and Scott Ernst
 
-<%inherit file="/shared/vml/divBase.mako" />
+<%inherit file="../divBase.mako" />
 
 <%block name="tagBodyBlock">
     <iframe ${mr.data.write('player') | n}

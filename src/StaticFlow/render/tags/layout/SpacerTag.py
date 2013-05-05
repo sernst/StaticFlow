@@ -13,7 +13,7 @@ class SpacerTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG           = 'spacer'
-    TEMPLATE      = 'shared/vml/divBase.mako'
+    TEMPLATE      = 'markup/divBase.mako'
     BLOCK_DISPLAY = True
     PRIMARY_ATTR  = TagAttributesEnum.HEIGHT[0]
 

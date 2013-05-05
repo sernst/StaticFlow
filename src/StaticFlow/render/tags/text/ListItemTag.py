@@ -14,7 +14,7 @@ class ListItemTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'item'
-    TEMPLATE       = 'vml/list/listItemBase.mako'
+    TEMPLATE       = 'markup/list/listItemBase.mako'
     BLOCK_DISPLAY  = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES

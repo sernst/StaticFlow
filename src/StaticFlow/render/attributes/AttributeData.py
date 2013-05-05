@@ -112,20 +112,19 @@ class AttributeData(DomRenderData):
 
         #-------------------------------------------------------------------------------------------
         # ATTRIBUTE ERROR CHECKING
-        if self._processor.privateView:
-            allowedAttrs = self._tag.__class__.getAttributeList()
-            if allowedAttrs is not None:
-                if self._primaryAttribute:
-                    allowedAttrs = allowedAttrs + ['value']
-                for k in self._props.keys():
-                    if not k in allowedAttrs:
-                        val, keyData = self.get([k], returnKey=True)
-                        self.logAttributeError(
-                            keyData=keyData,
-                            keyGroup=None,
-                            rawValue=val,
-                            code=MarkupAttributeError.INVALID_ATTRIBUTE,
-                        )
+        allowedAttrs = self._tag.__class__.getAttributeList()
+        if allowedAttrs is not None:
+            if self._primaryAttribute:
+                allowedAttrs = allowedAttrs + ['value']
+            for k in self._props.keys():
+                if not k in allowedAttrs:
+                    val, keyData = self.get([k], returnKey=True)
+                    self.logAttributeError(
+                        keyData=keyData,
+                        keyGroup=None,
+                        rawValue=val,
+                        code=MarkupAttributeError.INVALID_ATTRIBUTE,
+                    )
 
         self.id.add(self.get(TagAttributesEnum.ID, self.uid).replace(' ', ''))
         self.classes.add(self.get(TagAttributesEnum.HTML_CLASS, None))

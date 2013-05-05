@@ -13,7 +13,7 @@ class SuperscriptTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'super'
-    TEMPLATE       = 'vml/text/superscript.mako'
+    TEMPLATE       = 'markup/text/superscript.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
 

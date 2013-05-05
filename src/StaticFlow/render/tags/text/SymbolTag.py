@@ -13,7 +13,7 @@ class SymbolTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG           = 'symbol'
-    TEMPLATE      = 'shared/vml/spanBase.mako'
+    TEMPLATE      = 'markup/spanBase.mako'
     BLOCK_DISPLAY = False
     PRIMARY_ATTR  = TagAttributesEnum.VALUE[0]
 

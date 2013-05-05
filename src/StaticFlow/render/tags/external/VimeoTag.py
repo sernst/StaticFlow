@@ -18,7 +18,7 @@ class VimeoTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG            = 'vimeo'
-    TEMPLATE       = 'vml/external/vimeo.mako'
+    TEMPLATE       = 'markup/external/vimeo.mako'
     BLOCK_DISPLAY  = True
     PRIMARY_ATTR   = TagAttributesEnum.URL[0]
 

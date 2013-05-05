@@ -22,7 +22,7 @@ class YouTubeTag(MarkupTag):
 
     # The Mako template used to render the tag. This path is relative to the root path
     # /vizme/templates/mako/.
-    TEMPLATE       = 'vml/external/youTube.mako'
+    TEMPLATE       = 'markup/external/youTube.mako'
 
     # Specifies whether the tag should be rendered like a <div> tag when True or like a <span> tag
     # when False. Use False only for tags that should be inline with text.

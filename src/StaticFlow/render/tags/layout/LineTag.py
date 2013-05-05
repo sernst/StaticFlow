@@ -15,7 +15,7 @@ class LineTag(MarkupTag):
 #                                                                                       C L A S S
 
     TAG           = 'line'
-    TEMPLATE      = 'shared/vml/divBase.mako'
+    TEMPLATE      = 'markup/divBase.mako'
     BLOCK_DISPLAY = True
     PRIMARY_ATTR  = TagAttributesEnum.LINE_TYPE
 
