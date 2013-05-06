@@ -91,6 +91,8 @@ class TagDefinitions(object):
 
     MARKDOWN        = TagDefinition('markdown', 'MarkdownTag', 'terminal', True)
 
+    META_DATA       = TagDefinition('metadata', 'MetaDataTag', 'definitions', False)
+
     MEDIA           = TagDefinition('media', 'AssetTag', 'entities', False)
 
     NAVBAR          = TagDefinition('navbar', 'NavBarTag', 'elements', True)
@@ -133,9 +135,13 @@ class TagDefinitions(object):
 
     SUB             = TagDefinition('sub', 'SubscriptTag', 'text', True)
 
+    SUMMARY         = TagDefinition('summary', 'SummaryTag', 'definitions', True)
+
     SUPER           = TagDefinition('sup', 'SuperscriptTag', 'text', True)
 
     THEME           = TagDefinition('theme', 'ThemeTag', 'style', True)
+
+    TITLE           = TagDefinition('title', 'TitleTag', 'definitions', True)
 
     TWITTER         = TagDefinition('twitter', 'TwitterTag', 'external', False)
 

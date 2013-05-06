@@ -93,6 +93,7 @@ class MarkupProcessor(TextAnalyzer):
         self._radioArrays       = dict()
         self._patterns          = dict()
         self._groups            = dict()
+        self._metadata          = ArgsUtils.getAsDict('metadata', kwargs)
         self._libraryIDs        = []
         self._autoTitle         = u''
         self._autoDescription   = u''
@@ -100,6 +101,11 @@ class MarkupProcessor(TextAnalyzer):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: metadata
+    @property
+    def metadata(self):
+        return self._metadata
 
 #___________________________________________________________________________________________________ GS: hasErrors
     @property
