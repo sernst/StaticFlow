@@ -28,8 +28,9 @@ class MetaDataTag(MarkupTag):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
         MarkupTag.__init__(self, *args, **kwargs)
-        for item in self.attrs.items():
-            self._processor.metadata[item[0]] = item[1]
+        self._processor.metadata = dict(
+            self._processor.metadata.items() + self.attrs.attributeDict.items()
+        )
 
 #===================================================================================================
 #                                                                                     P U B L I C

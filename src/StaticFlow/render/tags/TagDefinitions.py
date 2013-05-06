@@ -101,6 +101,8 @@ class TagDefinitions(object):
 
     PAGE_URL        = TagDefinition('pageurl', 'PageUrlTag', 'data',  False)
 
+    PARAGRAPH       = TagDefinition('p', 'ParagraphTag', 'text', True)
+
     PATTERN         = TagDefinition('pattern', 'PatternTag', 'generators', True)
 
     QUOTE           = TagDefinition('quote', 'QuoteTag', 'insert', True)

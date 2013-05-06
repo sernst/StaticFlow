@@ -106,6 +106,9 @@ class MarkupProcessor(TextAnalyzer):
     @property
     def metadata(self):
         return self._metadata
+    @metadata.setter
+    def metadata(self, value):
+        self._metadata = value
 
 #___________________________________________________________________________________________________ GS: hasErrors
     @property

@@ -25,7 +25,7 @@ class SiteProcessor(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    _SKIP_EXTENSIONS = ('.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog')
+    _SKIP_EXTENSIONS = ('.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta')
 
     _FILE_COPY_PATHS = (
         ('js', 'ext'),
@@ -146,11 +146,16 @@ class SiteProcessor(object):
         p      = MarkupProcessor(source)
         result = p.get()
         if p.hasErrors:
-            print 'RENDER ERRORS:', p.renderErrors
+            for renderError in p.renderErrors:
+                print '\n' + 100*'-' + '\n   RENDER ERROR:\n', renderError.echo()
 
         targetPath = FileUtils.changePathRoot(sourcePath, self._webRootPath, self.targetRootPath)
         targetPath = targetPath.rsplit('.', 1)[0] + '.html'
-        return FileUtils.putContents(result, targetPath, raiseErrors=True)
+        if not FileUtils.putContents(result, targetPath, raiseErrors=True):
+            return False
+
+        targetPath = targetPath.rsplit('.', 1)[0] + '.meta'
+        return FileUtils.putContents(JSON.asString(p.metadata), targetPath)
 
 #___________________________________________________________________________________________________ _compileCss
     def _compileCss(self, path, name, args):
@@ -308,12 +313,22 @@ class SiteProcessor(object):
                     print 'ERROR[Failed to read HTML file]:', htmlSourcePath
                     print err
                     htmlSource = u''
+
+            metaSourcePath = htmlSourcePath.rsplit('.')[0] + '.meta'
+            if os.path.exists(metaSourcePath):
+                try:
+                    metadata = JSON.fromFile(metaSourcePath)
+                except Exception, err:
+                    metadata = dict()
+            else:
+                metadata = dict()
         else:
             htmlSource = u''
+            metadata   = dict()
 
         data = dict(
-            title=defs.get('TITLE', u''),
-            description=defs.get('DESCRIPTION', u''),
+            title=metadata.get('title', defs.get('TITLE', u'')),
+            description=metadata.get('summary', defs.get('DESCRIPTION', u'')),
             loader=u'/js/int/loader.js',
             pageVars=JSON.asString(defs.get('PAGE_VARS', dict())),
             defs=defs,

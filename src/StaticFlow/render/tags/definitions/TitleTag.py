@@ -17,11 +17,6 @@ class TitleTag(MarkupBlockTag):
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES
 
-#___________________________________________________________________________________________________ __init__
-    def __init__(self, *args, **kwargs):
-        super(TitleTag, self).__init__(*args, **kwargs)
-        self._processor.metadata['title'] = self.attrs.content
-
 #===================================================================================================
 #                                                                                     P U B L I C
 
@@ -30,4 +25,9 @@ class TitleTag(MarkupBlockTag):
     def getAttributeList(cls):
         return None
 
+#===================================================================================================
+#                                                                               P R O T E C T E D
 
+#___________________________________________________________________________________________________ _renderImpl
+    def _renderImpl(self, **kwargs):
+        self._processor.metadata['title'] = self.attrs.content

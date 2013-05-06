@@ -80,9 +80,9 @@ class AttributeData(DomRenderData):
 
         DomRenderData.__init__(self, **kwargs)
         self._tag                             = tag
-        self._processor                       = tag.processor
-        self._source                          = source
-        self._themeChanged                    = False
+        self._processor                      = tag.processor
+        self._source                         = source
+        self._themeChanged                   = False
         self._auxiliaryRenderData            = None
         self._auxiliaryRenderDataExtractions = None
 
@@ -93,12 +93,11 @@ class AttributeData(DomRenderData):
                 tag=tag,
                 code=MarkupTagError.CORRUPT_ATTRS
             ).log()
-            if CONFIG.VERBOSE:
-                tag.log.writeError([
-                    'VML ATTRIBUTE PARSE FAILURE',
-                    'raw: ' + str(source),
-                    'tag: ' + str(tag)
-                ], err)
+            tag.log.writeError([
+                'VML ATTRIBUTE PARSE FAILURE',
+                'raw: ' + str(source),
+                'tag: ' + str(tag)
+            ], err)
             return
 
         # Get the primary attribute if one has been assigned
@@ -238,6 +237,14 @@ class AttributeData(DomRenderData):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: attributeDict
+    @property
+    def attributeDict(self):
+        out = dict()
+        for key, value in self._props.iteritems():
+            out[key] = value[0]
+        return out
 
 #___________________________________________________________________________________________________ GS: tag
     @property

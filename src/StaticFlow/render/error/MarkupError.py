@@ -110,6 +110,27 @@ class MarkupError(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
+#___________________________________________________________________________________________________ echo
+    def echo(self):
+        if self._processor and self._processor.log.trace:
+            self._processor.log.write(self.getLogData())
+        else:
+            print self.getLogData()
+
+#___________________________________________________________________________________________________ getLogData
+    def getLogData(self):
+        logs = [
+            unicode(self.__class__.__name__),
+            u'Code: ' + unicode(self.code),
+            u'Label: ' + unicode(self.label),
+            u'Location: %s.%s' % (unicode(self.line), unicode(self.character)),
+            u'Block: ' + unicode(self._block),
+            u'Tag: ' + unicode(self._tag),
+            u'Info: ' + unicode((u'\n' + unicode(self.quotedInfo)) if self.quotedInfo else None)
+        ] + self._getLogData()
+        logs.append(u'Source: ' + unicode(self._logSource))
+        return logs
+
 #___________________________________________________________________________________________________ log
     def log(self):
         """Doc..."""
@@ -119,19 +140,7 @@ class MarkupError(object):
             return
 
         if self._verbose:
-            logs = [
-                unicode(self.__class__.__name__),
-                u'Code: ' + unicode(self.code),
-                u'Label: ' + unicode(self.label),
-                u'Location: %s.%s' % (unicode(self.line), unicode(self.character)),
-                u'Block: ' + unicode(self._block),
-                u'Tag: ' + unicode(self._tag),
-                u'Info: ' + unicode((u'\n' + unicode(self.quotedInfo)) if self.quotedInfo else None)
-            ] + self._getLogData()
-            logs.append(u'Source: ' + unicode(self._logSource))
-
-            self._processor.log.write(logs)
-
+            self._processor.log.write(self.getLogData())
         self._processor.addRenderError(self)
 
 #===================================================================================================
