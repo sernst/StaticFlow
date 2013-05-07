@@ -461,11 +461,11 @@ class MarkupProcessor(TextAnalyzer):
 
                 tag = r.group('tag')
                 preSource = source[:start]
-                if tag.startswith(u'<span'):
+                if StringUtils.begins(tag, (u'<span', u'<a')):
                     strippedPreSource = preSource.strip()
 
                     # Preserve lines between span tags
-                    if strippedPreSource.endswith(u'</span>'):
+                    if StringUtils.ends(strippedPreSource, (u'</span>', u'</a>')):
                         continue
 
                     # Preserve lines between span tags and non-html entities like text
@@ -492,11 +492,11 @@ class MarkupProcessor(TextAnalyzer):
 
                 tag        = r.group('tag')
                 postSource = source[end:]
-                if tag == u'</span>':
+                if tag in (u'</span>', u'</a>'):
                     strippedPostSource = postSource.strip()
 
                     # Preserve lines between span tags
-                    if strippedPostSource.startswith(u'<span'):
+                    if StringUtils.begins(strippedPostSource, (u'<span', u'<a')):
                         continue
 
                     # Preserve lines between span tags and non-html entities like text

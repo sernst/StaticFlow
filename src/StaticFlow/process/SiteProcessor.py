@@ -4,11 +4,11 @@
 
 import os
 import shutil
+import datetime
 
 import markdown
 
 from pyaid.debug.Logger import Logger
-from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
@@ -17,6 +17,7 @@ from pyaid.web.DomUtils import DomUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
+from StaticFlow.process.PageData import PageData
 
 #___________________________________________________________________________________________________ SiteProcessor
 class SiteProcessor(object):
@@ -40,6 +41,7 @@ class SiteProcessor(object):
         self._targetPath    = FileUtils.cleanupPath(targetPath, isDir=True) if targetPath else None
         self._containerPath = FileUtils.cleanupPath(containerPath, isDir=True)
         self._webRootPath   = FileUtils.createPath(containerPath, rootFolder, isDir=True)
+        self._pageData      = PageData(self)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -95,15 +97,7 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ generateHtml
     def generateHtml(self):
-        sourcePath = FileUtils.createPath(self.htmlDefinitionPath, 'root', isDir=True)
-        commonDefs = JSON.fromFile(
-            FileUtils.createPath(self.htmlDefinitionPath, 'common.def', isFile=True)
-        )
-
-        os.path.walk(sourcePath, self._htmlDefinitionWalker, dict(
-            sourcePath=sourcePath,
-            commonDefs=commonDefs
-        ))
+        os.path.walk(self._pageData.rootWebPath, self._htmlDefinitionWalker, None)
 
 #___________________________________________________________________________________________________ copyFiles
     def copyFiles(self):
@@ -256,15 +250,15 @@ class SiteProcessor(object):
                 continue
 
             defsPath = FileUtils.createPath(path, name, isFile=True)
-            defs = DictUtils.merge(
-                args['commonDefs'],
-                JSON.fromFile(defsPath)
-            )
-            sourceFolder = os.path.dirname(defsPath)[len(args['sourcePath']):].strip(os.sep).split(os.sep)
-            if 'HTML' in defs:
-                defs['HTML'] = defs['HTML'].replace('\\', '/').strip('/').split('/')
+            self._pageData.loadPageData(defsPath, clear=True)
 
-            filename = defs.get('FILE_NAME', None)
+            sourceFolder = self._pageData.getFolderParts(defsPath, self.htmlDefinitionPath)[1:]
+            if self._pageData.has('HTML'):
+                self._pageData.addItem(
+                    'HTML', self._pageData.get('HTML').replace('\\', '/').strip('/').split('/')
+                )
+
+            filename = self._pageData.get('FILE_NAME')
             if filename is None:
                 filename = name.rsplit('.', 1)[0]
 
@@ -272,11 +266,11 @@ class SiteProcessor(object):
                 filename = filename[:-5]
 
             if filename != '*':
-                self._createHtmlPage(filename, sourceFolder, defs, args)
+                self._createHtmlPage(filename, sourceFolder, args)
                 continue
 
             # Create files from entries
-            htmlRootPath = defs['HTML']
+            htmlRootPath = self._pageData.get('HTML')
             htmlSourceDirectory = FileUtils.createPath(self._webRootPath, *htmlRootPath, isDir=True)
             if not os.path.exists(htmlSourceDirectory):
                 print 'ERROR[Unknown path]:', htmlSourceDirectory
@@ -285,24 +279,35 @@ class SiteProcessor(object):
             for item in os.listdir(htmlSourceDirectory):
                 if not item.endswith('.html'):
                     continue
-                defs['HTML'] = htmlRootPath + [item]
-                self._createHtmlPage(item[:-5], sourceFolder, defs, args)
+                self._pageData.clear(page=False)
+                self._pageData.addItem('HTML', htmlRootPath + [item])
+                self._createHtmlPage(item[:-5], sourceFolder, args)
 
 #___________________________________________________________________________________________________ _createHtmlPage
-    def _createHtmlPage(self, filename, sourceFolder, defs, args):
-        pageVars = defs['PAGE_VARS']
+    def _createHtmlPage(self, filename, sourceFolder, args):
+        outPath = FileUtils.createPath(
+            self.targetRootPath, sourceFolder, filename + '.html', isFile=True
+        )
+        self._pageData.addItem('PAGE_URL', self._pageData.getUrlFromPath(outPath))
+
+        pageVars = self._pageData.getMerged('PAGE_VARS', dict())
+        self._pageData.addItem('PAGE_VARS', pageVars)
         for item in pageVars['SCRIPTS']:
             if len(item) == 3:
                 item.pop(2 if self.isLocal else 1)
 
         if 'DYNAMIC_DOMAIN' not in pageVars:
-            pageVars['DYNAMIC_DOMAIN'] = '' if self.isLocal else (u'//' + defs['DYNAMIC_DOMAIN'])
+            pageVars['DYNAMIC_DOMAIN'] = '' if self.isLocal else (
+                u'//' + self._pageData.get('DYNAMIC_DOMAIN')
+            )
 
         if 'HTML'in pageVars and not self.isLocal:
-            pageVars['HTML'] = u'//' + defs['DYNAMIC_DOMAIN'] + pageVars['HTML']
+            pageVars['HTML'] = u'//' + self._pageData.get('DYNAMIC_DOMAIN') + pageVars['HTML']
 
-        if 'HTML' in defs:
-            htmlSourcePath = FileUtils.createPath(self._webRootPath, *defs['HTML'], isFile=True)
+        if self._pageData.has('HTML'):
+            htmlSourcePath = FileUtils.createPath(
+                self._webRootPath, *self._pageData.get('HTML'), isFile=True
+            )
             if not os.path.exists(htmlSourcePath):
                 print 'ERROR[Missing HTML source file]:', htmlSourcePath
                 htmlSource = u''
@@ -326,28 +331,40 @@ class SiteProcessor(object):
             htmlSource = u''
             metadata   = dict()
 
+        metaDate = metadata.get('date', None)
+        if metaDate:
+            metaDate = metaDate.replace(u'/', u'-').strip().split(u'-')
+            if len(metaDate[-1]) < 4:
+                metaDate[-1] = u'20' + metaDate[-1]
+
+            metaDate = datetime.datetime(
+                year=int(metaDate[-1]),
+                month=int(metaDate[0]),
+                day=int(metaDate[1])
+            )
+            metadata['date'] = metaDate
+        self._pageData.addItems(metadata)
+
         data = dict(
-            title=metadata.get('title', defs.get('TITLE', u'')),
-            description=metadata.get('summary', defs.get('DESCRIPTION', u'')),
             loader=u'/js/int/loader.js',
-            pageVars=JSON.asString(defs.get('PAGE_VARS', dict())),
-            defs=defs,
-            htmlSource=htmlSource
+            pageVars=JSON.asString(pageVars),
+            pageData=self._pageData,
+            htmlSource=htmlSource,
+            metadata=metadata
         )
 
         mr = MakoRenderer(
-            template=defs['TEMPLATE'],
+            template=self._pageData.get('TEMPLATE'),
             rootPath=self.htmlTemplatePath,
             data=data,
             minify=not self.isLocal
         )
         result = mr.render()
 
-        try:
-            outPath = FileUtils.createPath(
-                self.targetRootPath, sourceFolder, filename + '.html', isFile=True
-            )
+        if not mr.success:
+            print mr.errorMessage
 
+        try:
             outDirectory = FileUtils.getDirectoryOf(outPath)
             if not os.path.exists(outDirectory):
                 os.makedirs(outDirectory)

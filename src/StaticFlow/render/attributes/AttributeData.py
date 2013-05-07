@@ -1063,22 +1063,14 @@ class AttributeData(DomRenderData):
     def getAsURL(self, keys, defaultValue =None, overrides =None, allowFailure =False,
                  extract =False, returnKey =False, allowPageID =False):
 
-        raw, keyData = self.get(
+        url, keyData = self.get(
             keys=keys, defaultValue=None, overrides=overrides, extract=extract, returnKey=True
         )
 
-        if not raw:
+        if not url:
             if returnKey:
                 return defaultValue, keyData
             return defaultValue
-
-        url = raw.replace(
-            u'%{VIZME}%', URLParameters.getRootMainURL(True)
-        ).replace(
-            u'%{VIZMEDOCS}%', URLParameters.getRootDocURL(True)
-        ).replace(
-            u'%{DEV}%', u'dev' if CONFIG.DEV else u''
-        )
 
         if AttributeData._ILLEGAL_ID_CHARS_RE.search(url):
             if returnKey:
@@ -1091,15 +1083,6 @@ class AttributeData(DomRenderData):
                 if returnKey:
                     return url, keyData
                 return url
-
-        if not allowFailure:
-            if raw.startswith(u'@'):
-                self.logAttributeError(
-                    keyData=keyData,
-                    keyGroup=keys,
-                    rawValue=url,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
-                )
 
         if returnKey:
             return defaultValue, keyData
