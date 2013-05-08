@@ -6,18 +6,14 @@ import os
 import shutil
 import datetime
 
-import markdown
-
 from pyaid.debug.Logger import Logger
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
 from pyaid.system.SystemUtils import SystemUtils
-from pyaid.web.DomUtils import DomUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
-from StaticFlow.render.MarkupProcessor import MarkupProcessor
-from StaticFlow.process.PageData import PageData
+from StaticFlow.process.PageDataManager import PageDataManager
 
 #___________________________________________________________________________________________________ SiteProcessor
 class SiteProcessor(object):
@@ -26,7 +22,9 @@ class SiteProcessor(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    _SKIP_EXTENSIONS = ('.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta')
+    _SKIP_EXTENSIONS = (
+        '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml'
+    )
 
     _FILE_COPY_PATHS = (
         ('js', 'ext'),
@@ -37,19 +35,25 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, targetPath, containerPath, rootFolder ='root', **kwargs):
         """Creates a new instance of SiteProcessor."""
-        self._log           = Logger(self)
-        self._targetPath    = FileUtils.cleanupPath(targetPath, isDir=True) if targetPath else None
-        self._containerPath = FileUtils.cleanupPath(containerPath, isDir=True)
-        self._webRootPath   = FileUtils.createPath(containerPath, rootFolder, isDir=True)
-        self._pageData      = PageData(self)
+        self._log = Logger(self)
+        self._rootFolderName    = rootFolder
+        self._targetWebRootPath = FileUtils.cleanupPath(targetPath, isDir=True)
+        self._containerPath     = FileUtils.cleanupPath(containerPath, isDir=True)
+        self._sourceWebRootPath = FileUtils.createPath(containerPath, rootFolder, isDir=True)
+        self._pages             = PageDataManager(self)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: rootFolderName
+    @property
+    def rootFolderName(self):
+        return self._rootFolderName
+
 #___________________________________________________________________________________________________ GS: isLocal
     @property
     def isLocal(self):
-        return self._targetPath is None
+        return self._targetWebRootPath is None
 
 #___________________________________________________________________________________________________ GS: htmlDefinitionPath
     @property
@@ -61,12 +65,17 @@ class SiteProcessor(object):
     def htmlTemplatePath(self):
         return FileUtils.createPath(self._containerPath, 'templates', isDir=True)
 
-#___________________________________________________________________________________________________ GS: targetRootPath
+#___________________________________________________________________________________________________ GS: targetWebRootPath
     @property
-    def targetRootPath(self):
-        if self._targetPath:
-            return self._targetPath
-        return FileUtils.createPath(self._webRootPath, isDir=True)
+    def targetWebRootPath(self):
+        if self._targetWebRootPath:
+            return self._targetWebRootPath
+        return self.sourceWebRootPath
+
+#___________________________________________________________________________________________________ GS: sourceWebRootPath
+    @property
+    def sourceWebRootPath(self):
+        return self._sourceWebRootPath
 
 #===================================================================================================
 #                                                                                     P U B L I C
@@ -74,15 +83,15 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ run
     def run(self):
         if not self.isLocal:
-            if not os.path.exists(self._targetPath):
-                os.makedirs(self._targetPath)
+            if not os.path.exists(self._targetWebRootPath):
+                os.makedirs(self._targetWebRootPath)
             self.copyFiles()
 
         self.compile()
         self.generateHtml()
 
         if not self.isLocal:
-            os.path.walk(self.targetRootPath, self._cleanupWalker, dict())
+            os.path.walk(self.targetWebRootPath, self._cleanupWalker, dict())
 
 #___________________________________________________________________________________________________ compile
     def compile(self):
@@ -90,14 +99,18 @@ class SiteProcessor(object):
         paths = ['js', 'html', 'css']
 
         for folder in paths:
-            path = FileUtils.createPath(self._webRootPath, folder, isDir=True)
+            path = FileUtils.createPath(self.sourceWebRootPath, folder, isDir=True)
             currentPath = os.curdir
             os.path.walk(path, self._compileWalker, args)
             os.chdir(currentPath)
 
 #___________________________________________________________________________________________________ generateHtml
     def generateHtml(self):
-        os.path.walk(self._pageData.rootWebPath, self._htmlDefinitionWalker, None)
+        os.path.walk(
+            FileUtils.createPath(self.htmlDefinitionPath, 'root', isDir=True),
+            self._htmlDefinitionWalker,
+            None
+        )
 
 #___________________________________________________________________________________________________ copyFiles
     def copyFiles(self):
@@ -105,8 +118,8 @@ class SiteProcessor(object):
             return False
 
         for item in self._FILE_COPY_PATHS:
-            sourcePath = FileUtils.createPath(self._webRootPath, *item, isDir=True)
-            destPath   = FileUtils.createPath(self.targetRootPath, *item, isDir=True)
+            sourcePath = FileUtils.createPath(self.sourceWebRootPath, *item, isDir=True)
+            destPath   = FileUtils.createPath(self.targetWebRootPath, *item, isDir=True)
             if not os.path.exists(destPath):
                 os.makedirs(destPath)
             FileUtils.mergeCopy(sourcePath, destPath)
@@ -123,33 +136,10 @@ class SiteProcessor(object):
         for name in names:
             if name.endswith('.coffee'):
                 self._compileCoffeescript(path, name, args)
-            elif StringUtils.ends(name, ('.markdown', '.md', '.mdown', '.mkdn', '.mkd')):
-                self._compileMarkdown(path, name, args)
             elif name.endswith('.css'):
                 self._compileCss(path, name, args)
-            elif StringUtils.ends(name, ('.sfml', '.blog')):
-                self._compileMarkup(path, name, args)
-
-#___________________________________________________________________________________________________ _compileMarkup
-    def _compileMarkup(self, path, name, args):
-        sourcePath = FileUtils.createPath(path, name, isFile=True)
-        source     = FileUtils.getContents(sourcePath)
-        if not source:
-            return False
-
-        p      = MarkupProcessor(source)
-        result = p.get()
-        if p.hasErrors:
-            for renderError in p.renderErrors:
-                print '\n' + 100*'-' + '\n   RENDER ERROR:\n', renderError.echo()
-
-        targetPath = FileUtils.changePathRoot(sourcePath, self._webRootPath, self.targetRootPath)
-        targetPath = targetPath.rsplit('.', 1)[0] + '.html'
-        if not FileUtils.putContents(result, targetPath, raiseErrors=True):
-            return False
-
-        targetPath = targetPath.rsplit('.', 1)[0] + '.meta'
-        return FileUtils.putContents(JSON.asString(p.metadata), targetPath)
+            elif name.endswith('.sfml'):
+                self._pages.create(sourcePath=FileUtils.createPath(path, name, isFile=True))
 
 #___________________________________________________________________________________________________ _compileCss
     def _compileCss(self, path, name, args):
@@ -157,7 +147,7 @@ class SiteProcessor(object):
             return False
 
         sourcePath = FileUtils.createPath(path, name, isFile=True)
-        outPath    = FileUtils.changePathRoot(sourcePath, self._webRootPath, self.targetRootPath)
+        outPath    = FileUtils.changePathRoot(sourcePath, self.sourceWebRootPath, self.targetWebRootPath)
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
         result = SystemUtils.executeCommand([
@@ -172,40 +162,6 @@ class SiteProcessor(object):
         print 'COMPRESSED:', name
         return True
 
-#___________________________________________________________________________________________________ _compileMarkdown
-    def _compileMarkdown(self, path, name, args):
-        parts      = name.rsplit('.', 1)
-        sourcePath = FileUtils.createPath(path, name, isFile=True)
-        destPath   = FileUtils.createPath(path, parts[0] + '.html', isFile=True)
-        if not self.isLocal:
-            destPath = FileUtils.changePathRoot(destPath, self._webRootPath, self.targetRootPath)
-
-        try:
-            f = open(sourcePath, 'r+')
-            source = f.read().encode('utf-8', 'ignore')
-            f.close()
-        except Exception, err:
-            return False
-
-        try:
-            content = markdown.markdown(source)
-            if not self.isLocal:
-                content = DomUtils.minifyDom(content)
-        except Exception, err:
-            return False
-
-        destFolder = os.path.dirname(destPath)
-        if not os.path.exists(destFolder):
-            os.makedirs(destFolder)
-
-        try:
-            f = open(destPath, 'w+')
-            f.write(content.decode('utf-8', 'ignore'))
-            f.close()
-        except Exception, err:
-            return False
-        return True
-
 #___________________________________________________________________________________________________ _compileCoffeescript
     def _compileCoffeescript(self, path, name, args):
         coffeePath = os.path.join(args['npmPath'], 'coffee')
@@ -215,7 +171,7 @@ class SiteProcessor(object):
         sourcePath = csPath[:-6] + 'js'
         outPath    = sourcePath
         if not self.isLocal:
-            outPath = FileUtils.changePathRoot(outPath, self._webRootPath, self.targetRootPath)
+            outPath = FileUtils.changePathRoot(outPath, self.sourceWebRootPath, self.targetWebRootPath)
 
         result = SystemUtils.executeCommand(
             '%s --output "%s" --compile "%s"' % (coffeePath, os.path.dirname(outPath), csPath)
@@ -250,15 +206,16 @@ class SiteProcessor(object):
                 continue
 
             defsPath = FileUtils.createPath(path, name, isFile=True)
-            self._pageData.loadPageData(defsPath, clear=True)
+            pageData = self._pages.create()
+            pageData.loadPageData(defsPath, clear=True)
 
-            sourceFolder = self._pageData.getFolderParts(defsPath, self.htmlDefinitionPath)[1:]
-            if self._pageData.has('HTML'):
-                self._pageData.addItem(
-                    'HTML', self._pageData.get('HTML').replace('\\', '/').strip('/').split('/')
+            sourceFolder = pageData.getFolderParts(defsPath, self.htmlDefinitionPath)[1:]
+            if pageData.has('HTML'):
+                pageData.addItem(
+                    'HTML', pageData.get('HTML').replace('\\', '/').strip('/').split('/')
                 )
 
-            filename = self._pageData.get('FILE_NAME')
+            filename = pageData.get('FILE_NAME')
             if filename is None:
                 filename = name.rsplit('.', 1)[0]
 
@@ -266,12 +223,12 @@ class SiteProcessor(object):
                 filename = filename[:-5]
 
             if filename != '*':
-                self._createHtmlPage(filename, sourceFolder, args)
+                self._createHtmlPage(filename, sourceFolder, pageData, args)
                 continue
 
             # Create files from entries
-            htmlRootPath = self._pageData.get('HTML')
-            htmlSourceDirectory = FileUtils.createPath(self._webRootPath, *htmlRootPath, isDir=True)
+            htmlRootPath = pageData.get('HTML')
+            htmlSourceDirectory = FileUtils.createPath(self._sourceWebRootPath, *htmlRootPath, isDir=True)
             if not os.path.exists(htmlSourceDirectory):
                 print 'ERROR[Unknown path]:', htmlSourceDirectory
                 continue
@@ -279,34 +236,34 @@ class SiteProcessor(object):
             for item in os.listdir(htmlSourceDirectory):
                 if not item.endswith('.html'):
                     continue
-                self._pageData.clear(page=False)
-                self._pageData.addItem('HTML', htmlRootPath + [item])
-                self._createHtmlPage(item[:-5], sourceFolder, args)
+                itemPageData = self._pages.clone(pageData, page=True)
+                itemPageData.addItem('HTML', htmlRootPath + [item])
+                self._createHtmlPage(item[:-5], sourceFolder, itemPageData, args)
 
 #___________________________________________________________________________________________________ _createHtmlPage
-    def _createHtmlPage(self, filename, sourceFolder, args):
+    def _createHtmlPage(self, filename, sourceFolder, pageData, args):
         outPath = FileUtils.createPath(
-            self.targetRootPath, sourceFolder, filename + '.html', isFile=True
+            self.targetWebRootPath, sourceFolder, filename + '.html', isFile=True
         )
-        self._pageData.addItem('PAGE_URL', self._pageData.getUrlFromPath(outPath))
+        pageData.addItem('PAGE_URL', pageData.getUrlFromPath(outPath))
 
-        pageVars = self._pageData.getMerged('PAGE_VARS', dict())
-        self._pageData.addItem('PAGE_VARS', pageVars)
+        pageVars = pageData.getMerged('PAGE_VARS', dict())
+        pageData.addItem('PAGE_VARS', pageVars)
         for item in pageVars['SCRIPTS']:
             if len(item) == 3:
                 item.pop(2 if self.isLocal else 1)
 
         if 'DYNAMIC_DOMAIN' not in pageVars:
             pageVars['DYNAMIC_DOMAIN'] = '' if self.isLocal else (
-                u'//' + self._pageData.get('DYNAMIC_DOMAIN')
+                u'//' + pageData.get('DYNAMIC_DOMAIN')
             )
 
         if 'HTML'in pageVars and not self.isLocal:
-            pageVars['HTML'] = u'//' + self._pageData.get('DYNAMIC_DOMAIN') + pageVars['HTML']
+            pageVars['HTML'] = u'//' + pageData.get('DYNAMIC_DOMAIN') + pageVars['HTML']
 
-        if self._pageData.has('HTML'):
+        if pageData.has('HTML'):
             htmlSourcePath = FileUtils.createPath(
-                self._webRootPath, *self._pageData.get('HTML'), isFile=True
+                self.sourceWebRootPath, *pageData.get('HTML'), isFile=True
             )
             if not os.path.exists(htmlSourcePath):
                 print 'ERROR[Missing HTML source file]:', htmlSourcePath
@@ -343,18 +300,20 @@ class SiteProcessor(object):
                 day=int(metaDate[1])
             )
             metadata['date'] = metaDate
-        self._pageData.addItems(metadata)
+        else:
+            metadata['date'] = datetime.datetime.now()
+        pageData.addItems(metadata)
 
         data = dict(
             loader=u'/js/int/loader.js',
             pageVars=JSON.asString(pageVars),
-            pageData=self._pageData,
+            pageData=pageData,
             htmlSource=htmlSource,
             metadata=metadata
         )
 
         mr = MakoRenderer(
-            template=self._pageData.get('TEMPLATE'),
+            template=pageData.get('TEMPLATE'),
             rootPath=self.htmlTemplatePath,
             data=data,
             minify=not self.isLocal

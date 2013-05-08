@@ -13,7 +13,7 @@ class TagDefinitions(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
-    B               = TagDefinition('b', 'BoldTag', 'style', True)
+    BOLD            = TagDefinition('b', 'BoldTag', 'style', True)
 
     BORDER          = TagDefinition('border', 'BorderTag', 'box', True)
 
@@ -25,7 +25,7 @@ class TagDefinitions(object):
 
     COFFEECUP       = TagDefinition('coffeecup', 'CoffeecupTag', 'terminal', True)
 
-    COFFEESCRIPT     = TagDefinition('coffeescript', 'CoffeeScriptTag', 'terminal', True)
+    COFFEESCRIPT    = TagDefinition('coffeescript', 'CoffeeScriptTag', 'terminal', True)
 
     COLOR           = TagDefinition('color', 'ColorTag', 'style', True)
 
@@ -63,7 +63,7 @@ class TagDefinitions(object):
 
     HULU            = TagDefinition('hulu', 'HuluTag', 'external', False)
 
-    I               = TagDefinition('i', 'ItalicsTag', 'style', True)
+    ITALICS         = TagDefinition('i', 'ItalicsTag', 'style', True)
 
     ICON            = TagDefinition('icon', 'IconTag', 'text', False)
 

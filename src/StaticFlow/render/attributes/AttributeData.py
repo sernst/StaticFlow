@@ -33,7 +33,7 @@ class AttributeData(DomRenderData):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    GLOBAL_CLASS_PREFIX = 'v-gvml'
+    GLOBAL_CLASS_PREFIX = 'sfml'
 
     _PARSE_BLOCKS = [
         BlockDefinition.createQuoteDef(BlockDefinition.BLOCKED),

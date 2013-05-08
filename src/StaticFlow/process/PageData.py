@@ -8,6 +8,8 @@ from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 
+from StaticFlow.render.MarkupProcessor import MarkupProcessor
+
 #___________________________________________________________________________________________________ PageData
 class PageData(object):
     """A class for..."""
@@ -16,10 +18,11 @@ class PageData(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor):
+    def __init__(self, processor, sourcePath =None, definitionPath =None):
         """Creates a new instance of PageData."""
-        self._processor  = processor
-        self._rootWebPath = FileUtils.createPath(processor.htmlDefinitionPath, 'root', isDir=True)
+        self._processor      = processor
+        self._sourcePath     = sourcePath
+        self._definitionPath = definitionPath
 
         try:
             self._commonData = self._cleanDictKeys(JSON.fromFile(
@@ -28,11 +31,31 @@ class PageData(object):
         except Exception, err:
             self._commonData = dict()
 
-        self._pageData   = dict()
-        self._tempData   = dict()
+        self._pageData        = dict()
+        self._tempData        = dict()
+        self._markupProcessor = None
+
+        if not sourcePath:
+            return
+
+        if sourcePath.endswith('.sfml'):
+            self._compileMarkup()
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: markupProcessor
+    @property
+    def markupProcessor(self):
+        return self._markupProcessor
+    @markupProcessor.setter
+    def markupProcessor(self, value):
+        self._markupProcessor = value
+
+#___________________________________________________________________________________________________ GS: sourcePath
+    @property
+    def sourcePath(self):
+        return self._sourcePath
 
 #___________________________________________________________________________________________________ GS: dataSources
     @property
@@ -44,10 +67,14 @@ class PageData(object):
     def processor(self):
         return self._processor
 
-#___________________________________________________________________________________________________ GS: rootWebPath
+#___________________________________________________________________________________________________ GS: rootDefinitionsPath
     @property
-    def rootWebPath(self):
-        return self._rootWebPath
+    def rootDefinitionsPath(self):
+        return FileUtils.createPath(
+            self.processor.htmlDefinitionPath,
+            self.processor.rootFolderName,
+            isDir=True
+        )
 
 #___________________________________________________________________________________________________ GS: commonData
     @property
@@ -58,14 +85,38 @@ class PageData(object):
     @property
     def pageData(self):
         return self._pageData
+    @pageData.setter
+    def pageData(self, value):
+        self._pageData = value
 
 #___________________________________________________________________________________________________ GS: tempData
     @property
     def tempData(self):
         return self._tempData
+    @tempData.setter
+    def tempData(self, value):
+        self._tempData = value
+
+#___________________________________________________________________________________________________ GS: htmlSource
+    @property
+    def htmlSource(self):
+        return None
+    @htmlSource.setter
+    def htmlSource(self, value):
+        pass
+
 
 #===================================================================================================
 #                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ clone
+    def clone(self, page =False, temp =False):
+        out = PageData(self._processor)
+        if page:
+            out.pageData = DictUtils.clone(self._pageData)
+        if temp:
+            out.pageData = DictUtils.clone(self._tempData)
+        return out
 
 #___________________________________________________________________________________________________ getUrlFromPath
     def getUrlFromPath(self, path):
@@ -75,13 +126,13 @@ class PageData(object):
         isIndex = path.endswith('index.html')
 
         url = u'http://' + self.get('DOMAIN') + u'/'
-        if path.startswith(self.rootWebPath):
+        if path.startswith(self.rootDefinitionsPath):
             url += u'/'.join(
-                self.getFolderParts(path, self.rootWebPath, includeFilename=not isIndex)
+                self.getFolderParts(path, self.rootDefinitionsPath, includeFilename=not isIndex)
             )
-        elif path.startswith(self.processor.targetRootPath):
+        elif path.startswith(self.processor.targetWebRootPath):
             url += u'/'.join(
-                self.getFolderParts(path, self.processor.targetRootPath, includeFilename=not isIndex)
+                self.getFolderParts(path, self.processor.targetWebRootPath, includeFilename=not isIndex)
             )
         else:
             return u''
@@ -194,6 +245,32 @@ class PageData(object):
         for key, value in source.iteritems():
             out[key.lower()] = value
         return out
+
+#___________________________________________________________________________________________________ _compileMarkup
+    def _compileMarkup(self):
+        source = FileUtils.getContents(self.sourcePath)
+        if not source:
+            return False
+
+        p = MarkupProcessor(source)
+        result = p.get()
+        self._markupProcessor = p
+
+        if p.hasErrors:
+            for renderError in p.renderErrors:
+                print '\n' + 100*'-' + '\n   RENDER ERROR:\n', renderError.echo()
+
+        targetPath = FileUtils.changePathRoot(
+            self.sourcePath,
+            self.processor.sourceWebRootPath,
+            self.processor.targetWebRootPath
+        )
+        targetPath = targetPath.rsplit('.', 1)[0] + '.html'
+        if not FileUtils.putContents(result, targetPath, raiseErrors=True):
+            return False
+
+        targetPath = targetPath.rsplit('.', 1)[0] + '.meta'
+        return FileUtils.putContents(JSON.asString(p.metadata), targetPath)
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

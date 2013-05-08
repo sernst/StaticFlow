@@ -53,7 +53,7 @@ class BoxTag(MarkupBlockTag):
             a, True, kwargs, group=a.styleGroup, defaultValue=GeneralSizeEnum.xsmall[0]
         )
 
-        color = a.getAsColorMixer(
+        color = a.getAsColorValue(
             TagAttributesEnum.COLOR,
             ArgsUtils.get('colorDef', None, kwargs),
             kwargs
