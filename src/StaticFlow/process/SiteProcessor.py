@@ -226,7 +226,6 @@ class SiteProcessor(object):
             pageData.loadPageData(defsPath, clear=True)
 
             sourceFolder = pageData.getFolderParts(defsPath, self.sourceWebRootPath)
-            print 'SOURCE FOLDER:', sourceFolder
             if pageData.has('HTML'):
                 pageData.addItem(
                     'HTML', pageData.get('HTML').replace('\\', '/').strip('/').split('/')
