@@ -6,6 +6,7 @@ import os
 import shutil
 import datetime
 
+from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
@@ -23,111 +24,124 @@ class SiteProcessor(object):
 #                                                                                       C L A S S
 
     _SKIP_EXTENSIONS = (
-        '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml'
+        '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml',
+        '.sfmlp', '.sfmeta'
     )
 
-    _FILE_COPY_PATHS = (
-        ('js', 'ext'),
-        ('img',),
-        ('html',)
-    )
+    _FILE_COPY_TYPES = ('.js', '.css', '.png', '.gif', '.jpg', '.ico')
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, targetPath, containerPath, rootFolder ='root', **kwargs):
+    def __init__(self, targetPath, containerPath,  sourceRootFolder ='src', **kwargs):
         """Creates a new instance of SiteProcessor."""
         self._log = Logger(self)
-        self._rootFolderName    = rootFolder
-        self._targetWebRootPath = FileUtils.cleanupPath(targetPath, isDir=True)
+        self._sourceRootFolderName = sourceRootFolder
+
+        # NGinx root path in which all files reside
         self._containerPath     = FileUtils.cleanupPath(containerPath, isDir=True)
-        self._sourceWebRootPath = FileUtils.createPath(containerPath, rootFolder, isDir=True)
-        self._pages             = PageDataManager(self)
+
+        # Location of the source files used to create the website
+        self._sourceWebRootPath = FileUtils.createPath(containerPath, sourceRootFolder, isDir=True)
+
+        # Locations where files should be deployed. If the target root path is None, which is the
+        # default value, the local web root path is used in its place.
+        self._targetWebRootPath = FileUtils.cleanupPath(targetPath, isDir=True)
+        self._localWebRootPath  = FileUtils.createPath(
+            containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True
+        )
+
+        # Manages the data for all of the path definitions
+        self._pages   = PageDataManager(self)
+
+        # Specifies whether the website processing is local or deployed. In the deployed case
+        self._isLocal = ArgsUtils.get('isLocal', None, kwargs)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
 
-#___________________________________________________________________________________________________ GS: rootFolderName
+#___________________________________________________________________________________________________ GS: sourceRootFolderName
     @property
-    def rootFolderName(self):
-        return self._rootFolderName
+    def sourceRootFolderName(self):
+        """Folder name within the container path where the source files (definitions, etc.) reside"""
+        return self._sourceRootFolderName
+
+#___________________________________________________________________________________________________ GS: sourceWebRootPath
+    @property
+    def sourceWebRootPath(self):
+        """Absolute path to the source folder where the source files (definitions, etc.) reside"""
+        return self._sourceWebRootPath
 
 #___________________________________________________________________________________________________ GS: isLocal
     @property
     def isLocal(self):
-        return self._targetWebRootPath is None
-
-#___________________________________________________________________________________________________ GS: htmlDefinitionPath
-    @property
-    def htmlDefinitionPath(self):
-        return FileUtils.createPath(self._containerPath, 'definitions', isDir=True)
+        """Specifies whether or not the processor is deploying locally or remotely"""
+        if self._isLocal is None:
+            return self._targetWebRootPath is None
+        return bool(self._isLocal)
 
 #___________________________________________________________________________________________________ GS: htmlTemplatePath
     @property
     def htmlTemplatePath(self):
+        """Root Mako template path"""
         return FileUtils.createPath(self._containerPath, 'templates', isDir=True)
 
 #___________________________________________________________________________________________________ GS: targetWebRootPath
     @property
     def targetWebRootPath(self):
+        """Web root path where processed files should be deployed"""
         if self._targetWebRootPath:
             return self._targetWebRootPath
-        return self.sourceWebRootPath
-
-#___________________________________________________________________________________________________ GS: sourceWebRootPath
-    @property
-    def sourceWebRootPath(self):
-        return self._sourceWebRootPath
+        return self._localWebRootPath
 
 #===================================================================================================
 #                                                                                     P U B L I C
 
 #___________________________________________________________________________________________________ run
     def run(self):
-        if not self.isLocal:
-            if not os.path.exists(self._targetWebRootPath):
-                os.makedirs(self._targetWebRootPath)
-            self.copyFiles()
+        if not os.path.exists(self.targetWebRootPath):
+            os.makedirs(self._targetWebRootPath)
 
-        self.compile()
-        self.generateHtml()
+        #-------------------------------------------------------------------------------------------
+        # COPY FILES
+        #       Copies files from the source folders to the target root folder, maintaining folder
+        #       structure in the process
+        os.path.walk(self.sourceWebRootPath, self._copyWalker, None)
 
-        if not self.isLocal:
-            os.path.walk(self.targetWebRootPath, self._cleanupWalker, dict())
+        #-------------------------------------------------------------------------------------------
+        # COMPILE
+        #       Compiles source files to the target root folder
+        args = dict(npmPath=os.path.join(os.environ['APPDATA'], 'npm'))
+        currentPath = os.curdir
+        os.path.walk(self.sourceWebRootPath, self._compileWalker, args)
+        os.chdir(currentPath)
 
-#___________________________________________________________________________________________________ compile
-    def compile(self):
-        args  = dict(npmPath=os.path.join(os.environ['APPDATA'], 'npm'))
-        paths = ['js', 'html', 'css']
+        #-------------------------------------------------------------------------------------------
+        # GENERATE FROM DEFS
+        #       Renders HTML files from the source definition files
+        os.path.walk(self.sourceWebRootPath, self._htmlDefinitionWalker, None)
 
-        for folder in paths:
-            path = FileUtils.createPath(self.sourceWebRootPath, folder, isDir=True)
-            currentPath = os.curdir
-            os.path.walk(path, self._compileWalker, args)
-            os.chdir(currentPath)
+        #-------------------------------------------------------------------------------------------
+        # CLEANUP
+        #       Removes temporary and excluded file types from the target root folder
+        os.path.walk(self.targetWebRootPath, self._cleanupWalker, dict())
 
-#___________________________________________________________________________________________________ generateHtml
-    def generateHtml(self):
-        os.path.walk(
-            FileUtils.createPath(self.htmlDefinitionPath, 'root', isDir=True),
-            self._htmlDefinitionWalker,
-            None
-        )
-
-#___________________________________________________________________________________________________ copyFiles
-    def copyFiles(self):
-        if self.isLocal:
-            return False
-
-        for item in self._FILE_COPY_PATHS:
-            sourcePath = FileUtils.createPath(self.sourceWebRootPath, *item, isDir=True)
-            destPath   = FileUtils.createPath(self.targetWebRootPath, *item, isDir=True)
-            if not os.path.exists(destPath):
-                os.makedirs(destPath)
-            FileUtils.mergeCopy(sourcePath, destPath)
-            print 'COPIED: %s -> %s' % (sourcePath, destPath)
         return True
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _copyWalker
+    def _copyWalker(self, args, path, names):
+        for item in names:
+            if not StringUtils.ends(item, self._FILE_COPY_TYPES):
+                continue
+
+            sourcePath = FileUtils.createPath(path, item)
+            destPath   = FileUtils.changePathRoot(
+                sourcePath, self.sourceWebRootPath, self.targetWebRootPath
+            )
+            FileUtils.getDirectoryOf(destPath, createIfMissing=True)
+            shutil.copy(sourcePath, destPath)
+            print 'COPIED: %s -> %s' % (sourcePath, destPath)
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):
@@ -147,7 +161,9 @@ class SiteProcessor(object):
             return False
 
         sourcePath = FileUtils.createPath(path, name, isFile=True)
-        outPath    = FileUtils.changePathRoot(sourcePath, self.sourceWebRootPath, self.targetWebRootPath)
+        outPath = FileUtils.changePathRoot(
+            sourcePath, self.sourceWebRootPath, self.targetWebRootPath
+        )
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
         result = SystemUtils.executeCommand([
@@ -167,11 +183,11 @@ class SiteProcessor(object):
         coffeePath = os.path.join(args['npmPath'], 'coffee')
         uglifyPath = os.path.join(args['npmPath'], 'uglifyjs')
 
-        csPath     = os.path.join(path, name)
-        sourcePath = csPath[:-6] + 'js'
-        outPath    = sourcePath
-        if not self.isLocal:
-            outPath = FileUtils.changePathRoot(outPath, self.sourceWebRootPath, self.targetWebRootPath)
+        csPath  = os.path.join(path, name)
+        outPath = FileUtils.changePathRoot(
+            csPath[:-6] + 'js', self.sourceWebRootPath, self.targetWebRootPath
+        )
+        FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
         result = SystemUtils.executeCommand(
             '%s --output "%s" --compile "%s"' % (coffeePath, os.path.dirname(outPath), csPath)
@@ -202,14 +218,15 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
         for name in names:
-            if not name.endswith('.def'):
+            if name == '__site__.def' or not name.endswith('.def'):
                 continue
 
             defsPath = FileUtils.createPath(path, name, isFile=True)
             pageData = self._pages.create()
             pageData.loadPageData(defsPath, clear=True)
 
-            sourceFolder = pageData.getFolderParts(defsPath, self.htmlDefinitionPath)[1:]
+            sourceFolder = pageData.getFolderParts(defsPath, self.sourceWebRootPath)
+            print 'SOURCE FOLDER:', sourceFolder
             if pageData.has('HTML'):
                 pageData.addItem(
                     'HTML', pageData.get('HTML').replace('\\', '/').strip('/').split('/')
@@ -228,17 +245,16 @@ class SiteProcessor(object):
 
             # Create files from entries
             htmlRootPath = pageData.get('HTML')
-            htmlSourceDirectory = FileUtils.createPath(self._sourceWebRootPath, *htmlRootPath, isDir=True)
-            if not os.path.exists(htmlSourceDirectory):
-                print 'ERROR[Unknown path]:', htmlSourceDirectory
-                continue
+            htmlSourceDirectory = FileUtils.createPath(
+                self.targetWebRootPath, *htmlRootPath, isDir=True
+            )
 
             for item in os.listdir(htmlSourceDirectory):
-                if not item.endswith('.html'):
+                if not item.endswith('.sfmlp'):
                     continue
                 itemPageData = self._pages.clone(pageData, page=True)
                 itemPageData.addItem('HTML', htmlRootPath + [item])
-                self._createHtmlPage(item[:-5], sourceFolder, itemPageData, args)
+                self._createHtmlPage(item[:-6], sourceFolder, itemPageData, args)
 
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self, filename, sourceFolder, pageData, args):
@@ -262,9 +278,23 @@ class SiteProcessor(object):
             pageVars['HTML'] = u'//' + pageData.get('DYNAMIC_DOMAIN') + pageVars['HTML']
 
         if pageData.has('HTML'):
+            try:
+                htmlSourceType = pageData.get('HTML')[-1].rsplit('.', 1)[0].lower()
+            except Exception, err:
+                htmlSourceType = 'html'
+
             htmlSourcePath = FileUtils.createPath(
-                self.sourceWebRootPath, *pageData.get('HTML'), isFile=True
+                self.sourceWebRootPath,
+                *pageData.get('HTML'),
+                isFile=True
             )
+            if not os.path.exists(htmlSourcePath) and htmlSourceType != 'html':
+                htmlSourcePath = FileUtils.createPath(
+                    self.targetWebRootPath,
+                    *pageData.get('HTML'),
+                    isFile=True
+                )
+
             if not os.path.exists(htmlSourcePath):
                 print 'ERROR[Missing HTML source file]:', htmlSourcePath
                 htmlSource = u''
@@ -276,7 +306,7 @@ class SiteProcessor(object):
                     print err
                     htmlSource = u''
 
-            metaSourcePath = htmlSourcePath.rsplit('.')[0] + '.meta'
+            metaSourcePath = htmlSourcePath.rsplit('.')[0] + '.sfmeta'
             if os.path.exists(metaSourcePath):
                 try:
                     metadata = JSON.fromFile(metaSourcePath)

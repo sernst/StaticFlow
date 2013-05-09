@@ -18,15 +18,15 @@ class PageData(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor, sourcePath =None, definitionPath =None):
+    def __init__(self, processor, sourcePath =None):
         """Creates a new instance of PageData."""
-        self._processor      = processor
-        self._sourcePath     = sourcePath
-        self._definitionPath = definitionPath
+        self._processor  = processor
+        self._sourcePath = sourcePath
+        self._targetPath = None
 
         try:
             self._commonData = self._cleanDictKeys(JSON.fromFile(
-                FileUtils.createPath(processor.htmlDefinitionPath, 'common.def', isFile=True)
+                FileUtils.createPath(processor.sourceWebRootPath, '__site__.def', isFile=True)
             ))
         except Exception, err:
             self._commonData = dict()
@@ -66,15 +66,6 @@ class PageData(object):
     @property
     def processor(self):
         return self._processor
-
-#___________________________________________________________________________________________________ GS: rootDefinitionsPath
-    @property
-    def rootDefinitionsPath(self):
-        return FileUtils.createPath(
-            self.processor.htmlDefinitionPath,
-            self.processor.rootFolderName,
-            isDir=True
-        )
 
 #___________________________________________________________________________________________________ GS: commonData
     @property
@@ -126,14 +117,14 @@ class PageData(object):
         isIndex = path.endswith('index.html')
 
         url = u'http://' + self.get('DOMAIN') + u'/'
-        if path.startswith(self.rootDefinitionsPath):
-            url += u'/'.join(
-                self.getFolderParts(path, self.rootDefinitionsPath, includeFilename=not isIndex)
-            )
+        if path.startswith(self.processor.sourceWebRootPath):
+            url += u'/'.join(self.getFolderParts(
+                path, self.processor.sourceWebRootPath, includeFilename=not isIndex
+            ))
         elif path.startswith(self.processor.targetWebRootPath):
-            url += u'/'.join(
-                self.getFolderParts(path, self.processor.targetWebRootPath, includeFilename=not isIndex)
-            )
+            url += u'/'.join(self.getFolderParts(
+                path, self.processor.targetWebRootPath, includeFilename=not isIndex
+            ))
         else:
             return u''
 
@@ -265,11 +256,13 @@ class PageData(object):
             self.processor.sourceWebRootPath,
             self.processor.targetWebRootPath
         )
-        targetPath = targetPath.rsplit('.', 1)[0] + '.html'
+        targetPath = targetPath.rsplit('.', 1)[0] + '.sfmlp'
+
+        FileUtils.getDirectoryOf(targetPath, createIfMissing=True)
         if not FileUtils.putContents(result, targetPath, raiseErrors=True):
             return False
 
-        targetPath = targetPath.rsplit('.', 1)[0] + '.meta'
+        targetPath = targetPath.rsplit('.', 1)[0] + '.sfmeta'
         return FileUtils.putContents(JSON.asString(p.metadata), targetPath)
 
 #===================================================================================================
