@@ -420,7 +420,12 @@ class PageData(object):
                 os.makedirs(outDirectory)
 
             FileUtils.putContents(result, self.targetPath, raiseErrors=True)
-
+            SiteProcessUtils.createHeaderFile(
+                self.targetPath,
+                [   FileUtils.getUTCModifiedDatetime(self._definitionPath),
+                    FileUtils.getUTCModifiedDatetime(self.sourcePath)
+                ]
+            )
             # Add the page to the sitemap
             self.processor.sitemap.add(self)
 

@@ -2,6 +2,8 @@
 # (C)2013
 # Scott Ernst
 
+from pyaid.time.TimeUtils import TimeUtils
+
 #___________________________________________________________________________________________________ RssEntry
 class RssEntry(object):
     """A class for..."""
@@ -42,7 +44,7 @@ class RssEntry(object):
 #___________________________________________________________________________________________________ GS: publishedDate
     @property
     def publishedDate(self):
-        return self.date.strftime(self._generator.RSS_DATE_FORMAT)
+        return TimeUtils.dateTimeToWebTimestamp(self.date)
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

@@ -2,8 +2,6 @@
 # (C)2013
 # Scott Ernst
 
-import os
-
 from pyaid.file.FileUtils import FileUtils
 
 from StaticFlow.process.PageData import PageData

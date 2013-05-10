@@ -14,6 +14,7 @@ from pyaid.string.StringUtils import StringUtils
 from pyaid.system.SystemUtils import SystemUtils
 
 from StaticFlow.process.PageDataManager import PageDataManager
+from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
 from StaticFlow.process.sitemap.SitemapManager import SitemapManager
 
@@ -188,6 +189,7 @@ class SiteProcessor(object):
             )
             FileUtils.getDirectoryOf(destPath, createIfMissing=True)
             shutil.copy(sourcePath, destPath)
+            SiteProcessUtils.createHeaderFile(destPath, FileUtils.getUTCModifiedDatetime(sourcePath))
             print 'COPIED: %s -> %s' % (sourcePath, destPath)
 
 #___________________________________________________________________________________________________ _compileWalker
@@ -244,6 +246,7 @@ class SiteProcessor(object):
         else:
             print 'COMPILED:', name
 
+        SiteProcessUtils.createHeaderFile(outPath, FileUtils.getUTCModifiedDatetime(csPath))
         if self.isLocal:
             return True
 

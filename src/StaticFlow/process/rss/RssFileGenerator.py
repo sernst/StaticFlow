@@ -6,6 +6,7 @@ import datetime
 
 from pyaid.file.FileUtils import FileUtils
 from pyaid.string.StringUtils import StringUtils
+from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
@@ -18,10 +19,7 @@ class RssFileGenerator(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    RSS_DATE_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
-
     _TEMPLATE = '/rss/rss.mako'
-
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, processor, pageData):
@@ -82,7 +80,7 @@ class RssFileGenerator(object):
 #___________________________________________________________________________________________________ GS: compiledTimestamp
     @property
     def compiledTimestamp(self):
-        return datetime.datetime.utcnow().strftime(self.RSS_DATE_FORMAT)
+        return TimeUtils.dateTimeToWebTimestamp(datetime.datetime.utcnow())
 
 #___________________________________________________________________________________________________ GS: lastModifiedTimestamp
     @property
@@ -95,7 +93,7 @@ class RssFileGenerator(object):
             if entry.date > lastDate:
                 lastDate = entry.date
 
-        return lastDate.strftime(self.RSS_DATE_FORMAT)
+        return TimeUtils.dateTimeToWebTimestamp(lastDate)
 
 #===================================================================================================
 #                                                                                     P U B L I C

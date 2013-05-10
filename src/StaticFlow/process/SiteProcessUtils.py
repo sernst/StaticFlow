@@ -4,12 +4,34 @@
 
 import os
 
+from pyaid.json.JSON import JSON
+from pyaid.time.TimeUtils import TimeUtils
+
 #___________________________________________________________________________________________________ SiteProcessUtils
 class SiteProcessUtils(object):
     """A class for..."""
 
 #===================================================================================================
 #                                                                                       C L A S S
+
+#___________________________________________________________________________________________________ createHeaderFile
+    @classmethod
+    def createHeaderFile(cls, path, lastModified, headers =None):
+        if not lastModified:
+            return False
+
+        if isinstance(lastModified, tuple) or isinstance(lastModified, list):
+            modTime = lastModified[0]
+            for newTime in lastModified[1:]:
+                if newTime and newTime > modTime:
+                    modTime = newTime
+            lastModified = modTime
+
+        if not headers:
+            headers = dict()
+        headers['_LAST_MODIFIED'] = TimeUtils.dateTimeToWebTimestamp(lastModified)
+
+        return JSON.toFile(path + '.headers', headers)
 
 #___________________________________________________________________________________________________ getUrlFromPath
     @classmethod
