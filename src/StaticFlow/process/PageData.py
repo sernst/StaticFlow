@@ -4,11 +4,13 @@
 
 import os
 
+from pyaid.NullUtils import NullUtils
 from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
+from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 
 #___________________________________________________________________________________________________ PageData
 class PageData(object):
@@ -17,23 +19,18 @@ class PageData(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
+    _GET_NULL = NullUtils.NULL('PAGE_DATA_GET')
+
 #___________________________________________________________________________________________________ __init__
     def __init__(self, processor, sourcePath =None):
         """Creates a new instance of PageData."""
         self._processor  = processor
         self._sourcePath = sourcePath
         self._targetPath = None
-
-        try:
-            self._commonData = self._cleanDictKeys(JSON.fromFile(
-                FileUtils.createPath(processor.sourceWebRootPath, '__site__.def', isFile=True)
-            ))
-        except Exception, err:
-            self._commonData = dict()
-
         self._pageData        = dict()
         self._tempData        = dict()
         self._markupProcessor = None
+        self._date            = None
 
         if not sourcePath:
             return
@@ -43,6 +40,14 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: date
+    @property
+    def date(self):
+        return self._date
+    @date.setter
+    def date(self, value):
+        self._date = value
 
 #___________________________________________________________________________________________________ GS: markupProcessor
     @property
@@ -57,20 +62,36 @@ class PageData(object):
     def sourcePath(self):
         return self._sourcePath
 
+#___________________________________________________________________________________________________ GS: targetPath
+    @property
+    def targetPath(self):
+        return self._targetPath
+    @targetPath.setter
+    def targetPath(self, value):
+        self._targetPath = value
+
+#___________________________________________________________________________________________________ GS: targetUrl
+    @property
+    def targetUrl(self):
+        path = self.targetPath
+        if not path:
+            return None
+        return SiteProcessUtils.getUrlFromPath(self.processor, self.get('DOMAIN'), path)
+
 #___________________________________________________________________________________________________ GS: dataSources
     @property
     def dataSources(self):
-        return [self._tempData, self._pageData, self._commonData]
+        return [self._tempData, self._pageData, self.processor.siteData]
 
 #___________________________________________________________________________________________________ GS: processor
     @property
     def processor(self):
         return self._processor
 
-#___________________________________________________________________________________________________ GS: commonData
+#___________________________________________________________________________________________________ GS: siteData
     @property
-    def commonData(self):
-        return self._commonData
+    def siteData(self):
+        return self._processor.siteData
 
 #___________________________________________________________________________________________________ GS: pageData
     @property
@@ -109,35 +130,6 @@ class PageData(object):
             out.pageData = DictUtils.clone(self._tempData)
         return out
 
-#___________________________________________________________________________________________________ getUrlFromPath
-    def getUrlFromPath(self, path):
-        if not self.has('DOMAIN'):
-            return u''
-
-        isIndex = path.endswith('index.html')
-
-        url = u'http://' + self.get('DOMAIN') + u'/'
-        if path.startswith(self.processor.sourceWebRootPath):
-            url += u'/'.join(self.getFolderParts(
-                path, self.processor.sourceWebRootPath, includeFilename=not isIndex
-            ))
-        elif path.startswith(self.processor.targetWebRootPath):
-            url += u'/'.join(self.getFolderParts(
-                path, self.processor.targetWebRootPath, includeFilename=not isIndex
-            ))
-        else:
-            return u''
-
-        if isIndex and not url.endswith(u'/'):
-            url += u'/'
-        return url
-
-#___________________________________________________________________________________________________ getFolderParts
-    def getFolderParts(self, path, rootPath, includeFilename =False):
-        if includeFilename:
-            return path[len(rootPath):].strip(os.sep).split(os.sep)
-        return os.path.dirname(path)[len(rootPath):].strip(os.sep).split(os.sep)
-
 #___________________________________________________________________________________________________ clear
     def clear(self, page =True, temp =True):
         if page:
@@ -152,30 +144,33 @@ class PageData(object):
 
         if not os.path.exists(path):
             return False
-        self._pageData = self._cleanDictKeys(JSON.fromFile(path))
+        self._pageData = DictUtils.lowerDictKeys(JSON.fromFile(path))
 
 #___________________________________________________________________________________________________ has
     def has(self, key, allowFalse =True):
-        key = key.lower()
-        for source in self.dataSources:
-            if key not in source:
-                continue
-            if not allowFalse and not source[key]:
-                continue
-
-            return True
-        return False
+        out     = self.get(key, self._GET_NULL)
+        result  = out != self._GET_NULL
+        if allowFalse:
+            return result
+        return out and result
 
 #___________________________________________________________________________________________________ get
     def get(self, key, defaultValue =None):
-        key = key.lower()
-        if key in self._tempData:
-            return self._tempData[key]
-        if key in self._pageData:
-            return self._pageData[key]
-        if key in self._commonData:
-            return self._commonData[key]
-        return defaultValue
+        if not key:
+            return defaultValue
+
+        if not isinstance(key, basestring):
+            sources = self.dataSources
+            for k in key:
+                sources = self._getFromDataDicts(k.lower(), sources)
+                if sources == self._GET_NULL:
+                    return defaultValue
+            return sources[0]
+
+        out = self._getFromDataDicts(key.lower(), self.dataSources)
+        if out == self._GET_NULL:
+            return defaultValue
+        return out[0]
 
 #___________________________________________________________________________________________________ getMerged
     def getMerged(self, key, defaultValue =None):
@@ -199,29 +194,25 @@ class PageData(object):
         """Doc..."""
         key = key.lower()
         if common:
-            self._commonData[key] = value
+            self._processor.siteData[key] = value
         elif page:
             self._pageData[key] = value
         else:
             self._tempData[key] = value
 
 #___________________________________________________________________________________________________ addItems
-    def addItems(self, values, common =False, page =False):
-        if common:
-            self._commonData = dict(self._commonData.items() + self._cleanDictKeys(values).items())
-        elif page:
-            self._pageData = dict(self._pageData.items() + self._cleanDictKeys(values).items())
+    def addItems(self, values, page =False):
+        if page:
+            self._pageData = dict(self._pageData.items() + DictUtils.lowerDictKeys(values).items())
         else:
-            self._tempData = dict(self._tempData.items() + self._cleanDictKeys(values).items())
+            self._tempData = dict(self._tempData.items() + DictUtils.lowerDictKeys(values).items())
 
 #___________________________________________________________________________________________________ removeItem
-    def removeItem(self, key, common =False, page =False, temp =False):
+    def removeItem(self, key, page =False, temp =False):
         key = key.lower()
-        if not common and not page and not temp:
+        if not page and not temp:
             temp = True
 
-        if common and key in self._commonData:
-            del self._commonData[key]
         if page and key in self._pageData:
             del self._pageData[key]
         if temp and key in self._tempData:
@@ -230,12 +221,16 @@ class PageData(object):
 #===================================================================================================
 #                                                                               P R O T E C T E D
 
-#___________________________________________________________________________________________________ _cleanDictKeys
-    def _cleanDictKeys(self, source):
-        out = dict()
-        for key, value in source.iteritems():
-            out[key.lower()] = value
-        return out
+#___________________________________________________________________________________________________ _getFromDataDicts
+    def _getFromDataDicts(self, key, items):
+        out = []
+        for item in items:
+            for value in item.items():
+                if value[0].lower() == key:
+                    out.append(value[1])
+        if out:
+            return out
+        return self._GET_NULL
 
 #___________________________________________________________________________________________________ _compileMarkup
     def _compileMarkup(self):

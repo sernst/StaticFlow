@@ -8,6 +8,7 @@ import datetime
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
+from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
@@ -15,6 +16,9 @@ from pyaid.system.SystemUtils import SystemUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.process.PageDataManager import PageDataManager
+from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
+from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
+from StaticFlow.process.sitemap.SitemapManager import SitemapManager
 
 #___________________________________________________________________________________________________ SiteProcessor
 class SiteProcessor(object):
@@ -22,6 +26,8 @@ class SiteProcessor(object):
 
 #===================================================================================================
 #                                                                                       C L A S S
+
+    _GLOBAL_DEFS = ('__site__.def', '__robots__.def')
 
     _SKIP_EXTENSIONS = (
         '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml',
@@ -49,8 +55,18 @@ class SiteProcessor(object):
             containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True
         )
 
+        try:
+            self._siteData = DictUtils.lowerDictKeys(JSON.fromFile(
+                FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True)
+            ))
+        except Exception, err:
+            self._siteData = dict()
+
         # Manages the data for all of the path definitions
-        self._pages   = PageDataManager(self)
+        self._pages         = PageDataManager(self)
+        self._sitemap       = SitemapManager(self)
+        self._robots        = RobotFileGenerator(self)
+        self._rssGenerators = []
 
         # Specifies whether the website processing is local or deployed. In the deployed case
         self._isLocal = ArgsUtils.get('isLocal', None, kwargs)
@@ -92,13 +108,30 @@ class SiteProcessor(object):
             return self._targetWebRootPath
         return self._localWebRootPath
 
+#___________________________________________________________________________________________________ GS: siteData
+    @property
+    def siteData(self):
+        return self._siteData
+
+#___________________________________________________________________________________________________ GS: sitemap
+    @property
+    def sitemap(self):
+        return self._sitemap
+
 #===================================================================================================
 #                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ getSiteData
+    def getSiteData(self, key, defaultValue =None):
+        key = key.lower()
+        if key in self._siteData:
+            return self._siteData[key]
+        return defaultValue
 
 #___________________________________________________________________________________________________ run
     def run(self):
         if not os.path.exists(self.targetWebRootPath):
-            os.makedirs(self._targetWebRootPath)
+            os.makedirs(self.targetWebRootPath)
 
         #-------------------------------------------------------------------------------------------
         # COPY FILES
@@ -118,6 +151,12 @@ class SiteProcessor(object):
         # GENERATE FROM DEFS
         #       Renders HTML files from the source definition files
         os.path.walk(self.sourceWebRootPath, self._htmlDefinitionWalker, None)
+
+        self._sitemap.write()
+        self._robots.write()
+
+        for rssGenerator in self._rssGenerators:
+            rssGenerator.write()
 
         #-------------------------------------------------------------------------------------------
         # CLEANUP
@@ -218,14 +257,14 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
         for name in names:
-            if name == '__site__.def' or not name.endswith('.def'):
+            if name in self._GLOBAL_DEFS or not name.endswith('.def'):
                 continue
 
             defsPath = FileUtils.createPath(path, name, isFile=True)
             pageData = self._pages.create()
             pageData.loadPageData(defsPath, clear=True)
 
-            sourceFolder = pageData.getFolderParts(defsPath, self.sourceWebRootPath)
+            sourceFolder = SiteProcessUtils.getFolderParts(defsPath, self.sourceWebRootPath)
             if pageData.has('HTML'):
                 pageData.addItem(
                     'HTML', pageData.get('HTML').replace('\\', '/').strip('/').split('/')
@@ -257,10 +296,9 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self, filename, sourceFolder, pageData, args):
-        outPath = FileUtils.createPath(
+        pageData.targetPath = FileUtils.createPath(
             self.targetWebRootPath, sourceFolder, filename + '.html', isFile=True
         )
-        pageData.addItem('PAGE_URL', pageData.getUrlFromPath(outPath))
 
         pageVars = pageData.getMerged('PAGE_VARS', dict())
         pageData.addItem('PAGE_VARS', pageVars)
@@ -317,21 +355,20 @@ class SiteProcessor(object):
             htmlSource = u''
             metadata   = dict()
 
-        metaDate = metadata.get('date', None)
+        metaDate = ArgsUtils.extract('date', None, metadata)
+        pageData.addItems(metadata)
         if metaDate:
             metaDate = metaDate.replace(u'/', u'-').strip().split(u'-')
             if len(metaDate[-1]) < 4:
                 metaDate[-1] = u'20' + metaDate[-1]
 
-            metaDate = datetime.datetime(
+            pageData.date = datetime.datetime(
                 year=int(metaDate[-1]),
                 month=int(metaDate[0]),
                 day=int(metaDate[1])
             )
-            metadata['date'] = metaDate
-        else:
-            metadata['date'] = datetime.datetime.now()
-        pageData.addItems(metadata)
+        elif not pageData.date:
+            pageData.date = datetime.datetime.now()
 
         data = dict(
             loader=u'/js/int/loader.js',
@@ -353,12 +390,16 @@ class SiteProcessor(object):
             print mr.errorMessage
 
         try:
-            outDirectory = FileUtils.getDirectoryOf(outPath)
+            outDirectory = FileUtils.getDirectoryOf(pageData.targetPath)
             if not os.path.exists(outDirectory):
                 os.makedirs(outDirectory)
 
-            FileUtils.putContents(result, outPath, raiseErrors=True)
-            print 'CREATED:', outPath
+            FileUtils.putContents(result, pageData.targetPath, raiseErrors=True)
+
+            # Add the page to the sitemap
+            self._sitemap.add(pageData)
+
+            print 'CREATED:', pageData.targetPath, ' -> ', pageData.targetUrl
         except Exception, err:
             print err
 

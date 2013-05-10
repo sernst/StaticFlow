@@ -8,9 +8,9 @@ import inspect
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
-from pyaid.file.FileUtils import FileUtils
 from pyaid.reflection.Reflection import Reflection
 
+from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.render.tags.TagDefinitions import TagDefinitions
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.error.MarkupTagError import MarkupTagError
@@ -24,16 +24,12 @@ class MarkupTag(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    TAG       = ''
+    TAG = ''
 
     _TAG_LIST                      = None
     _MARGIN_TOP_STYLE_ATTR_PATTERN = re.compile('margin-top:[^\'";]+')
     _STYLE_ATTR_PATTERN            = re.compile('style=(("[^"]*")|(\'[^\']*\'))')
     _TAG_INSERT_PATTERN            = re.compile('<[^>]+>')
-
-    _ROOT_TEMPLATE_PATH = FileUtils.createPath(
-        FileUtils.getDirectoryOf(__file__), '..', '..', '..', '..', 'templates', isDir=True
-    )
 
     _rootPackage = None
 
@@ -539,7 +535,7 @@ class MarkupTag(object):
         try:
             r = MakoRenderer(
                 template=self.renderTemplate,
-                rootPath=self._ROOT_TEMPLATE_PATH,
+                rootPath=StaticFlowEnvironment.rootTemplatePath,
                 data=data,
                 logger=self._log
             )
