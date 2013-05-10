@@ -4,6 +4,7 @@
 
 import os
 import shutil
+import tempfile
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
@@ -35,7 +36,7 @@ class SiteProcessor(object):
     _FILE_COPY_TYPES = ('.js', '.css', '.png', '.gif', '.jpg', '.ico')
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, targetPath, containerPath,  sourceRootFolder ='src', **kwargs):
+    def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
         """Creates a new instance of SiteProcessor."""
         self._log = Logger(self)
         self._sourceRootFolderName = sourceRootFolder
@@ -48,7 +49,12 @@ class SiteProcessor(object):
 
         # Locations where files should be deployed. If the target root path is None, which is the
         # default value, the local web root path is used in its place.
-        self._targetWebRootPath = FileUtils.cleanupPath(targetPath, isDir=True)
+
+        if isRemoteDeploy:
+            self._targetWebRootPath = FileUtils.cleanupPath(tempfile.mkdtemp(), isDir=True)
+        else:
+            self._targetWebRootPath = None
+
         self._localWebRootPath  = FileUtils.createPath(
             containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True
         )
@@ -138,6 +144,28 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ run
     def run(self):
+        try:
+            self._runImpl()
+        except Exception, err:
+            self.cleanup()
+            raise
+        return True
+
+#___________________________________________________________________________________________________ cleanup
+    def cleanup(self):
+        if self.isLocal or not os.path.exists(self.targetWebRootPath):
+            return False
+        try:
+            shutil.rmtree(self.targetWebRootPath)
+        except Exception, err:
+            raise
+        return True
+
+#===================================================================================================
+#                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _runImpl
+    def _runImpl(self):
         if not os.path.exists(self.targetWebRootPath):
             os.makedirs(self.targetWebRootPath)
 
@@ -173,9 +201,6 @@ class SiteProcessor(object):
         os.path.walk(self.targetWebRootPath, self._cleanupWalker, dict())
 
         return True
-
-#===================================================================================================
-#                                                                               P R O T E C T E D
 
 #___________________________________________________________________________________________________ _copyWalker
     def _copyWalker(self, args, path, names):
