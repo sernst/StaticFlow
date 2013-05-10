@@ -4,7 +4,6 @@
 
 import os
 import shutil
-import datetime
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.debug.Logger import Logger
@@ -13,10 +12,8 @@ from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
 from pyaid.system.SystemUtils import SystemUtils
-from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.process.PageDataManager import PageDataManager
-from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
 from StaticFlow.process.sitemap.SitemapManager import SitemapManager
 
@@ -118,6 +115,11 @@ class SiteProcessor(object):
     def sitemap(self):
         return self._sitemap
 
+#___________________________________________________________________________________________________ GS: pages
+    @property
+    def pages(self):
+        return self._pages
+
 #===================================================================================================
 #                                                                                     P U B L I C
 
@@ -148,9 +150,10 @@ class SiteProcessor(object):
         os.chdir(currentPath)
 
         #-------------------------------------------------------------------------------------------
-        # GENERATE FROM DEFS
-        #       Renders HTML files from the source definition files
+        # CREATE PAGE DEFS
+        #       Creates the page data files that define the pages to be generated
         os.path.walk(self.sourceWebRootPath, self._htmlDefinitionWalker, None)
+        self._pages.process()
 
         self._sitemap.write()
         self._robots.write()
@@ -191,8 +194,6 @@ class SiteProcessor(object):
                 self._compileCoffeescript(path, name, args)
             elif name.endswith('.css'):
                 self._compileCss(path, name, args)
-            elif name.endswith('.sfml'):
-                self._pages.create(sourcePath=FileUtils.createPath(path, name, isFile=True))
 
 #___________________________________________________________________________________________________ _compileCss
     def _compileCss(self, path, name, args):
@@ -257,151 +258,8 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
         for name in names:
-            if name in self._GLOBAL_DEFS or not name.endswith('.def'):
-                continue
-
-            defsPath = FileUtils.createPath(path, name, isFile=True)
-            pageData = self._pages.create()
-            pageData.loadPageData(defsPath, clear=True)
-
-            sourceFolder = SiteProcessUtils.getFolderParts(defsPath, self.sourceWebRootPath)
-            if pageData.has('HTML'):
-                pageData.addItem(
-                    'HTML', pageData.get('HTML').replace('\\', '/').strip('/').split('/')
-                )
-
-            filename = pageData.get('FILE_NAME')
-            if filename is None:
-                filename = name.rsplit('.', 1)[0]
-
-            if filename.endswith('.html'):
-                filename = filename[:-5]
-
-            if filename != '*':
-                self._createHtmlPage(filename, sourceFolder, pageData, args)
-                continue
-
-            # Create files from entries
-            htmlRootPath = pageData.get('HTML')
-            htmlSourceDirectory = FileUtils.createPath(
-                self.targetWebRootPath, *htmlRootPath, isDir=True
-            )
-
-            for item in os.listdir(htmlSourceDirectory):
-                if not item.endswith('.sfmlp'):
-                    continue
-                itemPageData = self._pages.clone(pageData, page=True)
-                itemPageData.addItem('HTML', htmlRootPath + [item])
-                self._createHtmlPage(item[:-6], sourceFolder, itemPageData, args)
-
-#___________________________________________________________________________________________________ _createHtmlPage
-    def _createHtmlPage(self, filename, sourceFolder, pageData, args):
-        pageData.targetPath = FileUtils.createPath(
-            self.targetWebRootPath, sourceFolder, filename + '.html', isFile=True
-        )
-
-        pageVars = pageData.getMerged('PAGE_VARS', dict())
-        pageData.addItem('PAGE_VARS', pageVars)
-        for item in pageVars['SCRIPTS']:
-            if len(item) == 3:
-                item.pop(2 if self.isLocal else 1)
-
-        if 'DYNAMIC_DOMAIN' not in pageVars:
-            pageVars['DYNAMIC_DOMAIN'] = '' if self.isLocal else (
-                u'//' + pageData.get('DYNAMIC_DOMAIN')
-            )
-
-        if 'HTML'in pageVars and not self.isLocal:
-            pageVars['HTML'] = u'//' + pageData.get('DYNAMIC_DOMAIN') + pageVars['HTML']
-
-        if pageData.has('HTML'):
-            try:
-                htmlSourceType = pageData.get('HTML')[-1].rsplit('.', 1)[0].lower()
-            except Exception, err:
-                htmlSourceType = 'html'
-
-            htmlSourcePath = FileUtils.createPath(
-                self.sourceWebRootPath,
-                *pageData.get('HTML'),
-                isFile=True
-            )
-            if not os.path.exists(htmlSourcePath) and htmlSourceType != 'html':
-                htmlSourcePath = FileUtils.createPath(
-                    self.targetWebRootPath,
-                    *pageData.get('HTML'),
-                    isFile=True
-                )
-
-            if not os.path.exists(htmlSourcePath):
-                print 'ERROR[Missing HTML source file]:', htmlSourcePath
-                htmlSource = u''
-            else:
-                try:
-                    htmlSource = FileUtils.getContents(htmlSourcePath, raiseErrors=True)
-                except Exception, err:
-                    print 'ERROR[Failed to read HTML file]:', htmlSourcePath
-                    print err
-                    htmlSource = u''
-
-            metaSourcePath = htmlSourcePath.rsplit('.')[0] + '.sfmeta'
-            if os.path.exists(metaSourcePath):
-                try:
-                    metadata = JSON.fromFile(metaSourcePath)
-                except Exception, err:
-                    metadata = dict()
-            else:
-                metadata = dict()
-        else:
-            htmlSource = u''
-            metadata   = dict()
-
-        metaDate = ArgsUtils.extract('date', None, metadata)
-        pageData.addItems(metadata)
-        if metaDate:
-            metaDate = metaDate.replace(u'/', u'-').strip().split(u'-')
-            if len(metaDate[-1]) < 4:
-                metaDate[-1] = u'20' + metaDate[-1]
-
-            pageData.date = datetime.datetime(
-                year=int(metaDate[-1]),
-                month=int(metaDate[0]),
-                day=int(metaDate[1])
-            )
-        elif not pageData.date:
-            pageData.date = datetime.datetime.now()
-
-        data = dict(
-            loader=u'/js/int/loader.js',
-            pageVars=JSON.asString(pageVars),
-            pageData=pageData,
-            htmlSource=htmlSource,
-            metadata=metadata
-        )
-
-        mr = MakoRenderer(
-            template=pageData.get('TEMPLATE'),
-            rootPath=self.htmlTemplatePath,
-            data=data,
-            minify=not self.isLocal
-        )
-        result = mr.render()
-
-        if not mr.success:
-            print mr.errorMessage
-
-        try:
-            outDirectory = FileUtils.getDirectoryOf(pageData.targetPath)
-            if not os.path.exists(outDirectory):
-                os.makedirs(outDirectory)
-
-            FileUtils.putContents(result, pageData.targetPath, raiseErrors=True)
-
-            # Add the page to the sitemap
-            self._sitemap.add(pageData)
-
-            print 'CREATED:', pageData.targetPath, ' -> ', pageData.targetUrl
-        except Exception, err:
-            print err
+            if name.endswith('.def') and name not in self._GLOBAL_DEFS:
+                self._pages.create(FileUtils.createPath(path, name, isFile=True))
 
 #___________________________________________________________________________________________________ _cleanupWalker
     def _cleanupWalker(self, args, path, names):

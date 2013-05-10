@@ -268,17 +268,17 @@ class MarkupProcessor(TextAnalyzer):
             return self._result
         elif not self._raw:
             return u''
-        else:
-            self._parseArgs(**kwargs)
 
-            try:
-                self.trace('Beginning analysis...')
-                self.analyze()
-                return self._result
-            except Exception, err:
-                self._log.writeError('Markup Conversion Failure', err)
-                MarkupGlobalError(processor=self).log()
-                return self._result if self._result else u''
+        self._parseArgs(**kwargs)
+
+        try:
+            self.trace('Beginning analysis...')
+            self.analyze()
+            return self._result
+        except Exception, err:
+            self._log.writeError('Markup Conversion Failure', err)
+            MarkupGlobalError(processor=self).log()
+            return self._result if self._result else u''
 
 #___________________________________________________________________________________________________ getNextTagIndex
     def getNextTagIndex(self):

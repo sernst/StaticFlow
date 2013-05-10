@@ -28,29 +28,21 @@ class PageDataManager(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
-#___________________________________________________________________________________________________ setCurrent
-    def setCurrent(self, pageData):
-        if pageData not in self._pages:
-            self.add(pageData)
-        self._current = pageData
-        return pageData
-
 #___________________________________________________________________________________________________ create
-    def create(self, **kwargs):
-        page = PageData(self._processor, **kwargs)
-        self.add(page)
+    def create(self, definitionPath, **kwargs):
+        page = PageData(self._processor, definitionPath=definitionPath, **kwargs)
+        self._pages.append(page)
         return page
 
-#___________________________________________________________________________________________________ clone
-    def clone(self, pageData =None, page =False, temp =False):
-        return self.add(pageData.clone(page=page, temp=temp))
-
-#___________________________________________________________________________________________________ add
-    def add(self, pageData):
+#___________________________________________________________________________________________________ process
+    def process(self):
         """Doc..."""
-        if pageData not in self._pages:
-            self._pages.append(pageData)
-        return pageData
+        for page in self._pages:
+            page.compile()
+
+        for page in self._pages:
+            page.process()
+        return True
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

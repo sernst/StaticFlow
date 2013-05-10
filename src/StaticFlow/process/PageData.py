@@ -3,11 +3,15 @@
 # Scott Ernst
 
 import os
+import datetime
 
+from pyaid.ArgsUtils import ArgsUtils
 from pyaid.NullUtils import NullUtils
 from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
+from pyaid.string.StringUtils import StringUtils
+from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
@@ -22,32 +26,90 @@ class PageData(object):
     _GET_NULL = NullUtils.NULL('PAGE_DATA_GET')
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor, sourcePath =None):
+    def __init__(self, processor, definitionPath, sourcePath =None, parentPage =None):
         """Creates a new instance of PageData."""
-        self._processor  = processor
-        self._sourcePath = sourcePath
-        self._targetPath = None
-        self._pageData        = dict()
-        self._tempData        = dict()
-        self._markupProcessor = None
-        self._date            = None
+        self._processor         = processor
+        self._markupProcessor   = None
+        self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
+        self._sourcePath        = sourcePath
+        self._pageData          = dict()
+        self._tempData          = dict()
+        self._date              = None
+        self._isProcessed       = False
+        self._parentPage        = parentPage
+        self._childPages        = []
 
-        if not sourcePath:
-            return
+        self._loadPageData()
 
-        if sourcePath.endswith('.sfml'):
-            self._compileMarkup()
+        # Creates multiple sub entries for universal folder files
+        if not self.sourcePath and self.filename is None:
+            folderPath = FileUtils.getDirectoryOf(self._definitionPath)
+            for item in os.listdir(folderPath):
+                if StringUtils.ends(item, ('.sfml', '.html')):
+                    self._childPages.append(
+                        processor.pages.create(
+                            definitionPath=self._definitionPath,
+                            sourcePath=FileUtils.createPath(folderPath, item, isFile=True),
+                            parentPage=self
+                        )
+                    )
 
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: parentPage
+    @property
+    def parentPage(self):
+        return self._parentPage
+
+#___________________________________________________________________________________________________ GS: childPages
+    @property
+    def childPages(self):
+        return self._childPages
+
+#___________________________________________________________________________________________________ GS: filename
+    @property
+    def filename(self):
+        filename = self.get('FILE_NAME')
+        if filename is None:
+            if self.sourcePath:
+                filename = os.path.basename(self.sourcePath).rsplit('.', 1)[0]
+            else:
+                return None
+
+        elif filename.endswith('.html'):
+            filename = filename[:-5]
+
+        if filename == '*':
+            return None
+        return filename
+
+#___________________________________________________________________________________________________ GS: sourcePath
+    @property
+    def sourcePath(self):
+        if self._sourcePath:
+            return self._sourcePath
+
+        fileNoExtension = self._definitionPath[:-3]
+        if os.path.exists(fileNoExtension + 'sfml'):
+            return fileNoExtension + 'sfml'
+        if os.path.exists(fileNoExtension + 'html'):
+            return fileNoExtension + 'html'
+        return None
+
+#___________________________________________________________________________________________________ GS: sourceFolder
+    @property
+    def sourceFolder(self):
+        if self.sourcePath:
+            return SiteProcessUtils.getFolderParts(
+                self.sourcePath, self.processor.sourceWebRootPath
+            )
+        return  None
+
 #___________________________________________________________________________________________________ GS: date
     @property
     def date(self):
-        return self._date
-    @date.setter
-    def date(self, value):
-        self._date = value
+        return self._date if self._date else datetime.datetime.now()
 
 #___________________________________________________________________________________________________ GS: markupProcessor
     @property
@@ -57,18 +119,18 @@ class PageData(object):
     def markupProcessor(self, value):
         self._markupProcessor = value
 
-#___________________________________________________________________________________________________ GS: sourcePath
-    @property
-    def sourcePath(self):
-        return self._sourcePath
-
 #___________________________________________________________________________________________________ GS: targetPath
     @property
     def targetPath(self):
-        return self._targetPath
-    @targetPath.setter
-    def targetPath(self, value):
-        self._targetPath = value
+        if not self.sourcePath:
+            return None
+
+        return FileUtils.createPath(
+            self.processor.targetWebRootPath,
+            self.sourceFolder,
+            self.filename + '.html',
+            isFile=True
+        )
 
 #___________________________________________________________________________________________________ GS: targetUrl
     @property
@@ -109,42 +171,24 @@ class PageData(object):
     def tempData(self, value):
         self._tempData = value
 
-#___________________________________________________________________________________________________ GS: htmlSource
+#___________________________________________________________________________________________________ GS: isCompiled
     @property
-    def htmlSource(self):
-        return None
-    @htmlSource.setter
-    def htmlSource(self, value):
-        pass
+    def isCompiled(self):
+        path = self.sourcePath
+        if not path:
+            return True
 
+        if self._markupProcessor or path.endswith('html'):
+            return True
+        return False
+
+#___________________________________________________________________________________________________ GS: isProcessed
+    @property
+    def isProcessed(self):
+        return self._isProcessed
 
 #===================================================================================================
 #                                                                                     P U B L I C
-
-#___________________________________________________________________________________________________ clone
-    def clone(self, page =False, temp =False):
-        out = PageData(self._processor)
-        if page:
-            out.pageData = DictUtils.clone(self._pageData)
-        if temp:
-            out.pageData = DictUtils.clone(self._tempData)
-        return out
-
-#___________________________________________________________________________________________________ clear
-    def clear(self, page =True, temp =True):
-        if page:
-            self._pageData = dict()
-        if temp:
-            self._tempData = dict()
-
-#___________________________________________________________________________________________________ loadPageData
-    def loadPageData(self, path, clear =False):
-        if clear:
-            self.clear()
-
-        if not os.path.exists(path):
-            return False
-        self._pageData = DictUtils.lowerDictKeys(JSON.fromFile(path))
 
 #___________________________________________________________________________________________________ has
     def has(self, key, allowFalse =True):
@@ -218,8 +262,41 @@ class PageData(object):
         if temp and key in self._tempData:
             del self._tempData[key]
 
+#___________________________________________________________________________________________________ compile
+    def compile(self):
+        for child in self._childPages:
+            child.compile()
+
+        if self.isCompiled:
+            return True
+
+        path = self.sourcePath
+        if path and path.endswith('.sfml'):
+            return self._compileMarkup()
+        return True
+
+#___________________________________________________________________________________________________ process
+    def process(self):
+        for child in self._childPages:
+            child.process()
+
+        if self.isProcessed:
+            return True
+
+        if self._createHtmlPage():
+            self._isProcessed = True
+        return self._isProcessed
+
 #===================================================================================================
 #                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _getSourceContent
+    def _getSourceContent(self):
+        if self._markupProcessor:
+            return self._markupProcessor.get()
+        elif not self.sourcePath:
+            return u''
+        return FileUtils.getContents(self.sourcePath)
 
 #___________________________________________________________________________________________________ _getFromDataDicts
     def _getFromDataDicts(self, key, items):
@@ -232,33 +309,95 @@ class PageData(object):
             return out
         return self._GET_NULL
 
+#___________________________________________________________________________________________________ _loadPageData
+    def _loadPageData(self):
+        path = self._definitionPath
+        if not path or not os.path.exists(path):
+            return False
+        self._pageData = DictUtils.lowerDictKeys(JSON.fromFile(path))
+
+        pageVars = self.getMerged('PAGE_VARS', dict())
+        self.addItem('PAGE_VARS', pageVars)
+        for item in pageVars['SCRIPTS']:
+            if len(item) == 3:
+                item.pop(2 if self.processor.isLocal else 1)
+
+        if 'DYNAMIC_DOMAIN' not in pageVars:
+            pageVars['DYNAMIC_DOMAIN'] = '' if self.processor.isLocal else (
+                u'//' + self.get('DYNAMIC_DOMAIN')
+            )
+
 #___________________________________________________________________________________________________ _compileMarkup
     def _compileMarkup(self):
         source = FileUtils.getContents(self.sourcePath)
-        if not source:
+        if source is None:
             return False
 
-        p = MarkupProcessor(source)
-        result = p.get()
-        self._markupProcessor = p
+        mp = MarkupProcessor(source)
+        mp.get()
 
-        if p.hasErrors:
-            for renderError in p.renderErrors:
+        self._markupProcessor = mp
+
+        if mp.hasErrors:
+            for renderError in mp.renderErrors:
                 print '\n' + 100*'-' + '\n   RENDER ERROR:\n', renderError.echo()
-
-        targetPath = FileUtils.changePathRoot(
-            self.sourcePath,
-            self.processor.sourceWebRootPath,
-            self.processor.targetWebRootPath
-        )
-        targetPath = targetPath.rsplit('.', 1)[0] + '.sfmlp'
-
-        FileUtils.getDirectoryOf(targetPath, createIfMissing=True)
-        if not FileUtils.putContents(result, targetPath, raiseErrors=True):
             return False
 
-        targetPath = targetPath.rsplit('.', 1)[0] + '.sfmeta'
-        return FileUtils.putContents(JSON.asString(p.metadata), targetPath)
+        self._date = self._parseDate(ArgsUtils.extract('date', None, mp.metadata))
+        self.addItems(mp.metadata)
+        return True
+
+#___________________________________________________________________________________________________ _parseData
+    def _parseDate(self, value):
+        if not value:
+            return None
+
+        value = value.replace(u'/', u'-').strip().split(u'-')
+        if len(value[-1]) < 4:
+            value[-1] = u'20' + value[-1]
+
+        return datetime.datetime(
+            year=int(value[-1]),
+            month=int(value[0]),
+            day=int(value[1])
+        )
+
+#___________________________________________________________________________________________________ _createHtmlPage
+    def _createHtmlPage(self):
+        data = dict(
+            loader=u'/js/int/loader.js',
+            pageVars=JSON.asString(self.get('PAGE_VARS')),
+            pageData=self,
+            htmlSource=self._getSourceContent(),
+        )
+
+        mr = MakoRenderer(
+            template=self.get('TEMPLATE'),
+            rootPath=self.processor.htmlTemplatePath,
+            data=data,
+            minify=not self.processor.isLocal
+        )
+        result = mr.render()
+
+        if not mr.success:
+            print mr.errorMessage
+            return False
+
+        try:
+            outDirectory = FileUtils.getDirectoryOf(self.targetPath)
+            if not os.path.exists(outDirectory):
+                os.makedirs(outDirectory)
+
+            FileUtils.putContents(result, self.targetPath, raiseErrors=True)
+
+            # Add the page to the sitemap
+            self.processor.sitemap.add(self)
+
+            print 'CREATED:', self.targetPath, ' -> ', self.targetUrl
+        except Exception, err:
+            print err
+            return False
+        return True
 
 #===================================================================================================
 #                                                                               I N T R I N S I C
