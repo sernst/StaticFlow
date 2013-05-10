@@ -52,6 +52,7 @@ class RssFileGenerator(object):
         out = self._pageData.get(('RSS', 'TITLE'), None)
         if not out:
             return self._pageData.get('TITLE', u'')
+        return out
 
 #___________________________________________________________________________________________________ GS: description
     @property
@@ -59,6 +60,7 @@ class RssFileGenerator(object):
         out = self._pageData.get(('RSS', 'DESCRIPTION'), None)
         if not out:
             return self._pageData.get('DESCRIPTION', u'')
+        return out
 
 #___________________________________________________________________________________________________ GS: homeUrl
     @property
