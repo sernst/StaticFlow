@@ -14,7 +14,12 @@ class StaticFlowEnvironment(object):
 
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
 
-#___________________________________________________________________________________________________ rootTemplatePath
+#___________________________________________________________________________________________________ GS: rootTemplatePath
     @ClassGetter
     def rootTemplatePath(cls):
         return FileUtils.createPath(cls._ENV_PATH, '..', '..', 'templates', isDir=True)
+
+#___________________________________________________________________________________________________ GS: rootPublicTemplatePath
+    @ClassGetter
+    def rootPublicTemplatePath(cls):
+        return FileUtils.createPath(cls.rootTemplatePath, 'public', isDir=True)

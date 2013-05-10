@@ -120,6 +120,11 @@ class SiteProcessor(object):
     def pages(self):
         return self._pages
 
+#___________________________________________________________________________________________________ GS: rssGenerators
+    @property
+    def rssGenerators(self):
+        return self._rssGenerators
+
 #===================================================================================================
 #                                                                                     P U B L I C
 

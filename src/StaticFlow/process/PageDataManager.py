@@ -40,6 +40,13 @@ class PageDataManager(object):
         for page in self._pages:
             page.compile()
 
+        # Adds pages to their respective RSS generators
+        for page in self._pages:
+            if page.rssGenerator:
+                continue
+            for gen in self._processor.rssGenerators:
+                gen.addEntry(page)
+
         for page in self._pages:
             page.process()
         return True

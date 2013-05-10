@@ -13,8 +13,10 @@ from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
+from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
+from StaticFlow.process.rss.RssFileGenerator import RssFileGenerator
 
 #___________________________________________________________________________________________________ PageData
 class PageData(object):
@@ -38,8 +40,13 @@ class PageData(object):
         self._isProcessed       = False
         self._parentPage        = parentPage
         self._childPages        = []
+        self._rssGenerator      = None
 
         self._loadPageData()
+
+        # If an RSS definition exists create an RSS generator
+        if self.get('RSS'):
+            self._rssGenerator = RssFileGenerator(processor, self)
 
         # Creates multiple sub entries for universal folder files
         if not self.sourcePath and self.filename is None:
@@ -56,6 +63,14 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: rssGenerator
+    @property
+    def rssGenerator(self):
+        return self._rssGenerator
+    @rssGenerator.setter
+    def rssGenerator(self, value):
+        self._rssGenerator = value
 
 #___________________________________________________________________________________________________ GS: parentPage
     @property
@@ -373,7 +388,10 @@ class PageData(object):
 
         mr = MakoRenderer(
             template=self.get('TEMPLATE'),
-            rootPath=self.processor.htmlTemplatePath,
+            rootPath=[
+                self.processor.htmlTemplatePath,
+                StaticFlowEnvironment.rootPublicTemplatePath
+            ],
             data=data,
             minify=not self.processor.isLocal
         )

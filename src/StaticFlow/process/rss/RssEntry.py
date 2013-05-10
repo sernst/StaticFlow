@@ -34,10 +34,15 @@ class RssEntry(object):
     def description(self):
         return self._pageData.get('DESCRIPTION')
 
+#___________________________________________________________________________________________________ GS: date
+    @property
+    def date(self):
+        return self._pageData.date
+
 #___________________________________________________________________________________________________ GS: publishedDate
     @property
     def publishedDate(self):
-        return self._pageData.date.strftime(self._generator.RSS_DATE_FORMAT)
+        return self.date.strftime(self._generator.RSS_DATE_FORMAT)
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

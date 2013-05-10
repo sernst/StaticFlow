@@ -5,6 +5,7 @@
 import datetime
 
 from pyaid.file.FileUtils import FileUtils
+from pyaid.string.StringUtils import StringUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
@@ -28,6 +29,19 @@ class RssFileGenerator(object):
         self._processor = processor
         self._pageData  = pageData
         self._entries   = []
+
+        self._includePaths = []
+        incs = pageData.get(('RSS', 'INCLUDES'))
+        if incs and isinstance(incs, basestring):
+            incs = [incs]
+        for inc in incs:
+            self._includePaths.append(FileUtils.createPath(
+                self._processor.sourceWebRootPath,
+                inc.strip().replace('\\', '/').strip('/').split('/'),
+                isDir=True
+            ))
+
+        self._processor.rssGenerators.append(self)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -86,7 +100,12 @@ class RssFileGenerator(object):
 
 #___________________________________________________________________________________________________ addEntry
     def addEntry(self, pageData):
+        sourcePath = pageData.sourcePath
+        if not sourcePath or not StringUtils.begins(sourcePath, self._includePaths):
+            return False
         self._entries.append(RssEntry(self._processor, self, pageData))
+        pageData.rssGenerator = self
+        return True
 
 #___________________________________________________________________________________________________ write
     def write(self):
