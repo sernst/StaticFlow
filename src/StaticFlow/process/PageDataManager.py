@@ -2,6 +2,10 @@
 # (C)2013
 # Scott Ernst
 
+import os
+
+from pyaid.file.FileUtils import FileUtils
+
 from StaticFlow.process.PageData import PageData
 
 #___________________________________________________________________________________________________ PageDataManager
@@ -14,8 +18,9 @@ class PageDataManager(object):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, processor):
         """Creates a new instance of PageDataManager."""
-        self._processor = processor
-        self._pages     = []
+        self._processor  = processor
+        self._pages      = []
+        self._emptyPages = []
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -31,7 +36,10 @@ class PageDataManager(object):
 #___________________________________________________________________________________________________ create
     def create(self, definitionPath, **kwargs):
         page = PageData(self._processor, definitionPath=definitionPath, **kwargs)
-        self._pages.append(page)
+        if page.sourcePath:
+            self._pages.append(page)
+        else:
+            self._emptyPages.append(page)
         return page
 
 #___________________________________________________________________________________________________ process
@@ -51,13 +59,47 @@ class PageDataManager(object):
             page.process()
         return True
 
+#___________________________________________________________________________________________________ getPagesInFolder
+    def getPagesInFolder(self, folder, dateSort =False, reverse =False, limit =0):
+        res  = []
+        folder = folder.replace('\\', '/').strip().strip('/').split('/')
+        path = FileUtils.createPath(self._processor.targetWebRootPath, *folder, isDir=True)
+        for page in self._pages:
+            if page.targetPath.startswith(path):
+                res.append(page)
+
+        if dateSort:
+            res = self._sortByDate(res, reverse)
+
+        if len(res) > limit > 0:
+            res = res[:limit]
+        return res
+
 #===================================================================================================
 #                                                                               P R O T E C T E D
 
 #___________________________________________________________________________________________________ _internalMethod
-    def _internalMethod(self):
+    def _sortByDate(self, pages, reverse =False):
         """Doc..."""
-        pass
+        if len(pages) < 2:
+            return pages
+
+        out = [pages[0]]
+        src = pages[1:]
+        while len(src) > 0:
+            page = src.pop()
+            for i in range(len(out)):
+                if page.date > out[i].date:
+                    continue
+                out.insert(i, page)
+                page = None
+                break
+            if page:
+                out.append(page)
+
+        if reverse:
+            out.reverse()
+        return out
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

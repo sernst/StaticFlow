@@ -48,6 +48,10 @@ class PageData(object):
         if self.get('RSS'):
             self._rssGenerator = RssFileGenerator(processor, self)
 
+        sourcePath = self.sourcePath
+        if sourcePath:
+            self._date = FileUtils.getModifiedDatetime(sourcePath)
+
         # Creates multiple sub entries for universal folder files
         if not self.sourcePath and self.filename is None:
             folderPath = FileUtils.getDirectoryOf(self._definitionPath)
@@ -154,6 +158,14 @@ class PageData(object):
         if not path:
             return None
         return SiteProcessUtils.getUrlFromPath(self.processor, self.get('DOMAIN'), path)
+
+#___________________________________________________________________________________________________ GS: targetUrlLink
+    @property
+    def targetUrlLink(self):
+        path = self.targetPath
+        if not path:
+            return None
+        return '/' + path[len(self.processor.targetWebRootPath):]
 
 #___________________________________________________________________________________________________ GS: dataSources
     @property
@@ -380,6 +392,7 @@ class PageData(object):
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self):
         data = dict(
+            processor=self.processor,
             loader=u'/js/int/loader.js',
             pageVars=JSON.asString(self.get('PAGE_VARS')),
             pageData=self,
