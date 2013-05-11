@@ -3,6 +3,7 @@
 # Scott Ernst
 
 import os
+import re
 import shutil
 import tempfile
 
@@ -25,8 +26,6 @@ class SiteProcessor(object):
 
 #===================================================================================================
 #                                                                                       C L A S S
-
-    _GLOBAL_DEFS = ('__site__.def', '__robots__.def')
 
     _SKIP_EXTENSIONS = (
         '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml',
@@ -81,6 +80,12 @@ class SiteProcessor(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: containerPath
+    @property
+    def containerPath(self):
+        """The Nginx container path where all files and management resides."""
+        return self._containerPath
 
 #___________________________________________________________________________________________________ GS: sourceRootFolderName
     @property
@@ -245,9 +250,46 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
+        # If a folder definition is found, use it to populate the directory with any missing
+        # definition files before proceeding
+        if '__folder__.def' in names:
+            self._processFolderDefinitions(
+                FileUtils.createPath(path, '__folder__.def', isFile=True)
+            )
+            names = os.listdir(path)
+
+        # For each definition file in the directory create page data for processing
         for name in names:
-            if name.endswith('.def') and name not in self._GLOBAL_DEFS:
+            if name.endswith('.def') and not name.startswith('__'):
                 self._pages.create(FileUtils.createPath(path, name, isFile=True))
+
+#___________________________________________________________________________________________________ _processFolderDefinitions
+    def _processFolderDefinitions(self, path):
+        cd        = ConfigsDict(JSON.fromFile(path))
+        directory = FileUtils.getDirectoryOf(path)
+
+        for item in os.listdir(directory):
+            # Only find content source file types
+            if not StringUtils.ends(item, ('.sfml', '.html')):
+                continue
+
+            # Skip files that already have a definitions file
+            itemPath     = FileUtils.createPath(directory, item, isFile=True)
+            itemDefsPath = itemPath.rsplit('.', 1)[0] + '.def'
+            if os.path.exists(itemDefsPath):
+                print 'FOLDER[skipped already defs exists]:', item
+                continue
+
+            test = SiteProcessUtils.testFileFilter(
+                itemPath,
+                cd.get(('FOLDER', 'EXTENSION_FILTER')),
+                cd.get(('FOLDER', 'NAME_FILTER'))
+            )
+            if not test:
+                continue
+
+            JSON.toFile(itemDefsPath, dict(), pretty=True)
+        return True
 
 #___________________________________________________________________________________________________ _cleanupWalker
     def _cleanupWalker(self, args, path, names):

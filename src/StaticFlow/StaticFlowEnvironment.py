@@ -16,6 +16,14 @@ class StaticFlowEnvironment(object):
 
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
 
+#___________________________________________________________________________________________________ GS: baseTime
+    @ClassGetter
+    def baseTime(self):
+        """ Returns the base time off which all time codes are generated. This is Jan 1, 2013, the
+            first day of the year StaticFlow was created.
+        """
+        return 1356998400
+
 #___________________________________________________________________________________________________ GS: nodePackageManagerPath
     @ClassGetter
     def nodePackageManagerPath(self):

@@ -11,7 +11,7 @@ from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
-from pyaid.string.StringUtils import StringUtils
+from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
@@ -35,6 +35,7 @@ class PageData(object):
         self._markupProcessor   = None
         self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
         self._sourcePath        = sourcePath
+        self._inheritData       = []
         self._pageData          = ConfigsDict()
         self._tempData          = ConfigsDict()
         self._date              = None
@@ -43,28 +44,13 @@ class PageData(object):
         self._childPages        = []
         self._rssGenerator      = None
         self._pageVars          = None
-        self._loadPageData()
+        self._loadDefinitions()
 
         # If an RSS definition exists create an RSS generator
         if self.get('RSS'):
             self._rssGenerator = RssFileGenerator(processor, self)
 
-        sourcePath = self.sourcePath
-        if sourcePath:
-            self._date = FileUtils.getModifiedDatetime(sourcePath)
-
-        # Creates multiple sub entries for universal folder files
-        if not self.sourcePath and self.filename is None:
-            folderPath = FileUtils.getDirectoryOf(self._definitionPath)
-            for item in os.listdir(folderPath):
-                if StringUtils.ends(item, ('.sfml', '.html')):
-                    self._childPages.append(
-                        processor.pages.create(
-                            definitionPath=self._definitionPath,
-                            sourcePath=FileUtils.createPath(folderPath, item, isFile=True),
-                            parentPage=self
-                        )
-                    )
+        self._date = FileUtils.getModifiedDatetime(self.sourcePath)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -129,7 +115,7 @@ class PageData(object):
             return SiteProcessUtils.getFolderParts(
                 self.sourcePath, self.processor.sourceWebRootPath
             )
-        return  None
+        return None
 
 #___________________________________________________________________________________________________ GS: date
     @property
@@ -176,7 +162,9 @@ class PageData(object):
 #___________________________________________________________________________________________________ GS: dataSources
     @property
     def dataSources(self):
-        return [self._tempData, self._pageData, self.processor.siteData]
+        out = [self._tempData, self._pageData] + self._inheritData
+        out.append(self.processor.siteData)
+        return out
 
 #___________________________________________________________________________________________________ GS: processor
     @property
@@ -238,7 +226,7 @@ class PageData(object):
         return out and result
 
 #___________________________________________________________________________________________________ get
-    def get(self, key, defaultValue =None):
+    def get(self, key, defaultValue =None, **kwargs):
         if not key:
             return defaultValue
         for source in self.dataSources:
@@ -327,13 +315,60 @@ class PageData(object):
             return u''
         return FileUtils.getContents(self.sourcePath)
 
-#___________________________________________________________________________________________________ _loadPageData
-    def _loadPageData(self):
-        path = self._definitionPath
-        if not path or not os.path.exists(path):
-            return False
-        self._pageData.data = DictUtils.lowerDictKeys(JSON.fromFile(path))
+#___________________________________________________________________________________________________ _loadDefinitions
+    def _loadDefinitions(self):
+        pageDefsPath = self._definitionPath
+        directory   = FileUtils.getDirectoryOf(pageDefsPath)
 
+        # Load page definitions
+        if not pageDefsPath or not os.path.exists(pageDefsPath):
+            return False
+        self._pageData.data = JSON.fromFile(pageDefsPath)
+
+        # Load folder level definitions
+        folderDefPath = FileUtils.createPath(directory, '__folder__.def', isFile=True)
+        if os.path.exists(folderDefPath):
+            cd = ConfigsDict(JSON.fromFile(folderDefPath))
+            test = SiteProcessUtils.testFileFilter(
+                self.sourcePath,
+                cd.get(('FOLDER', 'EXTENSION_FILTER')),
+                cd.get(('FOLDER', 'NAME_FILTER'))
+            )
+            if test:
+                self._inheritData.append(cd)
+
+        steps = []
+        while True:
+            parentDirectory = FileUtils.createPath(directory, *steps, isDir=True)
+            if parentDirectory == self.processor.containerPath:
+                break
+            parentPath = parentDirectory + '__parent__.def'
+            if os.path.exists(parentPath):
+                self._inheritData.append(ConfigsDict(JSON.fromFile(parentPath)))
+            steps.append('..')
+
+        # Create a UID for the page definition if one does not already exist
+        if not self._pageData.get('UID'):
+            uid       = []
+            uidPrefix = self.get('UID_PREFIX')
+            if uidPrefix:
+                uid.append(uidPrefix)
+
+            uid.append(TimeUtils.datetimeToTimecode(
+                datetime.datetime.utcnow(), StaticFlowEnvironment.baseTime
+            ))
+
+            pathParts = self.sourceFolder
+            pathParts.append(self.filename)
+            uid.append(u'-'.join(pathParts))
+
+            self._pageData.add('UID', u'_'.join(uid))
+            JSON.toFile(pageDefsPath, self._pageData.data, pretty=True)
+
+        self._createPageVars()
+
+#___________________________________________________________________________________________________ _createPageVars
+    def _createPageVars(self):
         self._pageVars             = self.getMerged('PAGE_VARS', dict())
         self._pageVars['CDN_ROOT'] = self.processor.cdnRootFolder
         self._pageVars['CDN_URL']  = self.processor.cdnRootUrl

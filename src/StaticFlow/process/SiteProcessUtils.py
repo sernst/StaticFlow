@@ -9,6 +9,7 @@ import datetime
 
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
+from pyaid.string.StringUtils import StringUtils
 from pyaid.system.SystemUtils import SystemUtils
 from pyaid.time.TimeUtils import TimeUtils
 
@@ -94,9 +95,12 @@ class SiteProcessUtils(object):
 #___________________________________________________________________________________________________ getFolderParts
     @classmethod
     def getFolderParts(cls, path, rootPath, includeFilename =False):
-        if includeFilename:
-            return path[len(rootPath):].strip(os.sep).split(os.sep)
-        return os.path.dirname(path)[len(rootPath):].strip(os.sep).split(os.sep)
+        if not includeFilename:
+            path = os.path.dirname(path)
+        out = path[len(rootPath):].replace('\\', '/').strip('/')
+        if not out:
+            return []
+        return out.split('/')
 
 #___________________________________________________________________________________________________ compileCoffeescript
     @classmethod
@@ -190,4 +194,22 @@ class SiteProcessUtils(object):
         lastModified = FileUtils.getUTCModifiedDatetime(path)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
         cls.copyToCdnFolder(outPath, processor, lastModified)
+        return True
+
+#___________________________________________________________________________________________________ testFileFilter
+    @classmethod
+    def testFileFilter(cls, path, extensionFilter =None, nameFilter =None):
+        # Skip extensions not included in the filter if the filter exists
+        if extensionFilter and not StringUtils.ends(path, extensionFilter):
+            print 'FOLDER[skipped extension]:', path
+            return False
+
+        # Skip names not included in the filter if the filter exists
+        if nameFilter and isinstance(nameFilter, basestring):
+            nameFilter = re.compile(nameFilter)
+
+        if nameFilter and not nameFilter.search(os.path.basename(path)):
+            print 'FOLDER[skipped name]:', path
+            return False
+
         return True
