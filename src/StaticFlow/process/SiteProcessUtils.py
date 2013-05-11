@@ -3,6 +3,7 @@
 # Scott Ernst
 
 import os
+import re
 import shutil
 import datetime
 
@@ -19,6 +20,33 @@ class SiteProcessUtils(object):
 
 #===================================================================================================
 #                                                                                       C L A S S
+
+    _CSS_CDN_IMAGE_RE = re.compile('url\([\s]*(?P<quote>["\']*)/(?!/)')
+
+#___________________________________________________________________________________________________ copyToCdnFolder
+    @classmethod
+    def copyToCdnFolder(cls, targetPath, processor, lastModified =None, headers =None):
+        if processor.isLocal:
+            return False
+
+        folder = targetPath[len(processor.targetWebRootPath):].replace('\\', '/').strip('/').split('/')
+        destPath = FileUtils.createPath(
+            processor.targetWebRootPath, processor.cdnRootFolder, folder, isFile=True
+        )
+        destFolder = FileUtils.getDirectoryOf(destPath)
+        if not os.path.exists(destFolder):
+            os.makedirs(destFolder)
+        shutil.copy(targetPath, destPath)
+
+        if not headers:
+            headers = dict()
+
+        if 'Expires' not in headers:
+            headers['Expires'] = TimeUtils.dateTimeToWebTimestamp(
+                datetime.datetime.utcnow() + datetime.timedelta(days=360)
+            )
+        cls.createHeaderFile(destPath, lastModified=lastModified, headers=headers)
+        return True
 
 #___________________________________________________________________________________________________ createHeaderFile
     @classmethod
@@ -100,7 +128,8 @@ class SiteProcessUtils(object):
         else:
             print 'COMPILED [js]:', path
 
-        SiteProcessUtils.createHeaderFile(outPath, FileUtils.getUTCModifiedDatetime(csPath))
+        lastModified = FileUtils.getUTCModifiedDatetime(csPath)
+        SiteProcessUtils.createHeaderFile(outPath, lastModified)
         if processor.isLocal:
             os.chdir(iniDirectory)
             return True
@@ -115,37 +144,50 @@ class SiteProcessUtils(object):
             print result
             os.chdir(iniDirectory)
             return False
-        else:
-            print 'COMPRESSED [js]:', outPath
+
+        cls.copyToCdnFolder(outPath, processor, lastModified)
+        print 'COMPRESSED [js]:', outPath
         return True
 
 #___________________________________________________________________________________________________ compileCss
     @classmethod
     def compileCss(cls, processor, path):
-        if processor.isLocal:
-            return False
-
-        iniDirectory = os.curdir
-        os.chdir(os.path.dirname(path))
-
         outPath = FileUtils.changePathRoot(
             path, processor.sourceWebRootPath, processor.targetWebRootPath
         )
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
-        result = SystemUtils.executeCommand([
-            FileUtils.createPath(
-                StaticFlowEnvironment.nodePackageManagerPath, 'minify', isFile=True
-            ),
-            path,
-            outPath
-        ])
-        if result['code']:
-            print result['error']
-            print 'ERROR [CSS compilation failure]:', path
-            os.chdir(iniDirectory)
-            return False
+        if processor.isLocal:
+            shutil.copy(path, outPath)
+            print 'COPIED [css]:', path
+        else:
+            iniDirectory = os.curdir
+            os.chdir(os.path.dirname(path))
+            result = SystemUtils.executeCommand([
+                FileUtils.createPath(
+                    StaticFlowEnvironment.nodePackageManagerPath, 'minify', isFile=True
+                ),
+                path,
+                outPath
+            ])
+            if result['code']:
+                print result['error']
+                print 'ERROR [CSS compilation failure]:', path
+                os.chdir(iniDirectory)
+                return False
 
-        print 'COMPRESSED [css]:', path
-        os.chdir(iniDirectory)
+            print 'COMPRESSED [css]:', path
+            os.chdir(iniDirectory)
+
+        source = FileUtils.getContents(outPath)
+        if not source:
+            return False
+        FileUtils.putContents(
+            cls._CSS_CDN_IMAGE_RE.sub('url(\g<quote>' + processor.cdnRootUrl + '/', source),
+            outPath
+        )
+
+        lastModified = FileUtils.getUTCModifiedDatetime(path)
+        SiteProcessUtils.createHeaderFile(outPath, lastModified)
+        cls.copyToCdnFolder(outPath, processor, lastModified)
         return True

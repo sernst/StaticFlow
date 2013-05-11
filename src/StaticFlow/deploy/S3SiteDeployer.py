@@ -93,6 +93,7 @@ class S3SiteDeployer(object):
                 key=u'/' + namePath[len(self._localRootPath):].replace(u'\\', u'/').strip(u'/'),
                 maxAge=headers.get('max-age', -1),
                 eTag=headers.get('eTag', None),
+                expires=headers.get('Expires'),
                 newerThanDate=lastModified,
                 policy=S3Bucket.PUBLIC_READ
             )

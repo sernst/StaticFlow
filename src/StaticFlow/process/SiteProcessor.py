@@ -9,11 +9,10 @@ import tempfile
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.debug.Logger import Logger
-from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
-from pyaid.system.SystemUtils import SystemUtils
+from pyaid.time.TimeUtils import TimeUtils
 
 from StaticFlow.process.PageDataManager import PageDataManager
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
@@ -34,16 +33,16 @@ class SiteProcessor(object):
         '.sfmlp', '.sfmeta'
     )
 
-    _FILE_COPY_TYPES = ('.js', '.css', '.png', '.gif', '.jpg', '.ico')
+    _FILE_COPY_TYPES = ('.js', '.png', '.gif', '.jpg', '.ico')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
         """Creates a new instance of SiteProcessor."""
-        self._log = Logger(self)
+        self._log = Logger(self, printOut=True)
         self._sourceRootFolderName = sourceRootFolder
 
         # NGinx root path in which all files reside
-        self._containerPath     = FileUtils.cleanupPath(containerPath, isDir=True)
+        self._containerPath = FileUtils.cleanupPath(containerPath, isDir=True)
 
         # Location of the source files used to create the website
         self._sourceWebRootPath = FileUtils.createPath(containerPath, sourceRootFolder, isDir=True)
@@ -52,7 +51,9 @@ class SiteProcessor(object):
         # default value, the local web root path is used in its place.
 
         if isRemoteDeploy:
-            self._targetWebRootPath = FileUtils.cleanupPath(tempfile.mkdtemp(), isDir=True)
+            self._targetWebRootPath = FileUtils.cleanupPath(
+                tempfile.mkdtemp(prefix='staticFlow_'), isDir=True
+            )
         else:
             self._targetWebRootPath = None
 
@@ -75,6 +76,8 @@ class SiteProcessor(object):
 
         # Specifies whether the website processing is local or deployed. In the deployed case
         self._isLocal = ArgsUtils.get('isLocal', None, kwargs)
+
+        self._cdnRootFolder = '' if self.isLocal else TimeUtils.getUtcTagTimestamp()
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -132,6 +135,21 @@ class SiteProcessor(object):
     @property
     def rssGenerators(self):
         return self._rssGenerators
+
+#___________________________________________________________________________________________________ GS: cdnRootFolder
+    @property
+    def cdnRootFolder(self):
+        return self._cdnRootFolder
+
+#___________________________________________________________________________________________________ GS: cdnRootUrl
+    @property
+    def cdnRootUrl(self):
+        if self.isLocal:
+            return u''
+        domain = self.siteData.get('CDN_DOMAIN')
+        if not domain:
+            return u''
+        return u'//' + domain + u'/' + self.cdnRootFolder
 
 #===================================================================================================
 #                                                                                     P U B L I C
@@ -209,8 +227,12 @@ class SiteProcessor(object):
             )
             FileUtils.getDirectoryOf(destPath, createIfMissing=True)
             shutil.copy(sourcePath, destPath)
-            SiteProcessUtils.createHeaderFile(destPath, FileUtils.getUTCModifiedDatetime(sourcePath))
-            print 'COPIED: %s -> %s' % (sourcePath, destPath)
+
+            lastModified = FileUtils.getUTCModifiedDatetime(sourcePath)
+            SiteProcessUtils.createHeaderFile(destPath, lastModified)
+            SiteProcessUtils.copyToCdnFolder(destPath, self, lastModified)
+
+            self._log.write('COPIED: %s -> %s' % (sourcePath, destPath))
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):

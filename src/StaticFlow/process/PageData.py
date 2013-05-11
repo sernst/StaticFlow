@@ -42,7 +42,7 @@ class PageData(object):
         self._parentPage        = parentPage
         self._childPages        = []
         self._rssGenerator      = None
-
+        self._pageVars          = None
         self._loadPageData()
 
         # If an RSS definition exists create an RSS generator
@@ -68,6 +68,11 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: pageVars
+    @property
+    def pageVars(self):
+        return self._pageVars
 
 #___________________________________________________________________________________________________ GS: rssGenerator
     @property
@@ -329,16 +334,34 @@ class PageData(object):
             return False
         self._pageData.data = DictUtils.lowerDictKeys(JSON.fromFile(path))
 
-        pageVars = self.getMerged('PAGE_VARS', dict())
-        self.addItem('PAGE_VARS', pageVars)
-        for item in pageVars['SCRIPTS']:
-            if len(item) == 3:
-                item.pop(2 if self.processor.isLocal else 1)
+        self._pageVars             = self.getMerged('PAGE_VARS', dict())
+        self._pageVars['CDN_ROOT'] = self.processor.cdnRootFolder
+        self._pageVars['CDN_URL']  = self.processor.cdnRootUrl
 
-        if 'DYNAMIC_DOMAIN' not in pageVars:
-            pageVars['DYNAMIC_DOMAIN'] = '' if self.processor.isLocal else (
-                u'//' + self.get('DYNAMIC_DOMAIN')
-            )
+        out = []
+        for item in self._pageVars['SCRIPTS']:
+            out.append(self._formatPageVarInclude(item))
+        self._pageVars['SCRIPTS'] = out
+
+        out = []
+        for item in self._pageVars['CSS']:
+            out.append(self._formatPageVarInclude(item))
+        self._pageVars['CSS'] = out
+
+        out = []
+        for item in self._pageVars['ASYNC']:
+            out.append(self._formatPageVarInclude(item))
+        self._pageVars['ASYNC'] = out
+
+#___________________________________________________________________________________________________ _formatPageVarInclude
+    def _formatPageVarInclude(self, item):
+        isLocal = self.processor.isLocal
+        out = [item[0]]
+        url = item[2] if len(item) == 3 and not isLocal else item[1]
+        if not isLocal and url[1] != u'/':
+            url = self.processor.cdnRootUrl + url
+        out.append(url)
+        return out
 
 #___________________________________________________________________________________________________ _compileMarkup
     def _compileMarkup(self):
@@ -379,8 +402,8 @@ class PageData(object):
     def _createHtmlPage(self):
         data = dict(
             processor=self.processor,
-            loader=u'/js/int/loader.js',
-            pageVars=JSON.asString(self.get('PAGE_VARS')),
+            loader=self.processor.cdnRootUrl + u'/js/int/loader.js',
+            pageVars=JSON.asString(self._pageVars),
             pageData=self,
             htmlSource=self._getSourceContent(),
         )

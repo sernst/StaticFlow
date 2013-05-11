@@ -110,7 +110,12 @@ class S3Bucket(object):
         headers = dict()
 
         if expires:
-            headers['Expires'] = TimeUtils.dateTimeToWebTimestamp(expires)
+            if isinstance(expires, unicode):
+                headers['Expires'] = expires.encode('utf-8', 'ignore')
+            elif isinstance(expires, str):
+                headers['Expires'] = expires
+            else:
+                headers['Expires'] = TimeUtils.dateTimeToWebTimestamp(expires)
         elif eTag:
             headers['ETag'] = unicode(eTag)
 
