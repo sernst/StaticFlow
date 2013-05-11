@@ -136,7 +136,7 @@ class S3Bucket(object):
     def _localIsNewer(self, key, newerThanDate):
         if not newerThanDate or not key.last_modified:
             return True
-        return TimeUtils.webTimestampToDateTime(k.last_modified) < newerThanDate
+        return TimeUtils.webTimestampToDateTime(key.last_modified) < newerThanDate
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

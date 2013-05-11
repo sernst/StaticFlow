@@ -40,7 +40,7 @@ class SitemapManager(object):
 #___________________________________________________________________________________________________ GS: sitemapTargetUrl
     @property
     def sitemapTargetUrl(self):
-        domain = self._processor.getSiteData('DOMAIN', None)
+        domain = self._processor.siteData.get('DOMAIN', None)
         if not domain:
             return u''
         return SiteProcessUtils.getUrlFromPath(self._processor, domain, self.sitemapTargetPath)

@@ -7,6 +7,7 @@ import datetime
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.NullUtils import NullUtils
+from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
@@ -34,8 +35,8 @@ class PageData(object):
         self._markupProcessor   = None
         self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
         self._sourcePath        = sourcePath
-        self._pageData          = dict()
-        self._tempData          = dict()
+        self._pageData          = ConfigsDict()
+        self._tempData          = ConfigsDict()
         self._date              = None
         self._isProcessed       = False
         self._parentPage        = parentPage
@@ -188,7 +189,10 @@ class PageData(object):
         return self._pageData
     @pageData.setter
     def pageData(self, value):
-        self._pageData = value
+        if isinstance(value, dict):
+            self._pageData.data = value
+        else:
+            self._pageData = value
 
 #___________________________________________________________________________________________________ GS: tempData
     @property
@@ -196,7 +200,10 @@ class PageData(object):
         return self._tempData
     @tempData.setter
     def tempData(self, value):
-        self._tempData = value
+        if isinstance(value, dict):
+            self._tempData.data = value
+        else:
+            self._tempData = value
 
 #___________________________________________________________________________________________________ GS: isCompiled
     @property
@@ -229,29 +236,23 @@ class PageData(object):
     def get(self, key, defaultValue =None):
         if not key:
             return defaultValue
-
-        if not isinstance(key, basestring):
-            sources = self.dataSources
-            for k in key:
-                sources = self._getFromDataDicts(k.lower(), sources)
-                if sources == self._GET_NULL:
-                    return defaultValue
-            return sources[0]
-
-        out = self._getFromDataDicts(key.lower(), self.dataSources)
-        if out == self._GET_NULL:
-            return defaultValue
-        return out[0]
+        for source in self.dataSources:
+            out = source.get(key, defaultValue=self._GET_NULL)
+            if out != self._GET_NULL:
+                return out
+        return defaultValue
 
 #___________________________________________________________________________________________________ getMerged
     def getMerged(self, key, defaultValue =None):
-        key = key.lower()
         items = []
         for source in self.dataSources:
-            if key in source:
-                items.append(source[key])
+            res = source.get(key, self._GET_NULL)
+            if res != self._GET_NULL:
+                items.append(res)
+
         if len(items) == 0:
             return defaultValue
+
         if len(items) == 1:
             return items[0]
 
@@ -261,22 +262,18 @@ class PageData(object):
         return out
 
 #___________________________________________________________________________________________________ addItem
-    def addItem(self, key, value, common =False, page =False):
+    def addItem(self, key, value, page =False):
         """Doc..."""
         key = key.lower()
-        if common:
-            self._processor.siteData[key] = value
-        elif page:
-            self._pageData[key] = value
+        if page:
+            self._pageData.add(key, value)
         else:
-            self._tempData[key] = value
+            self._tempData.add(key, value)
 
 #___________________________________________________________________________________________________ addItems
     def addItems(self, values, page =False):
-        if page:
-            self._pageData = dict(self._pageData.items() + DictUtils.lowerDictKeys(values).items())
-        else:
-            self._tempData = dict(self._tempData.items() + DictUtils.lowerDictKeys(values).items())
+        for name, value in values.iteritems():
+            self.addItem(name, value, page=page)
 
 #___________________________________________________________________________________________________ removeItem
     def removeItem(self, key, page =False, temp =False):
@@ -284,10 +281,10 @@ class PageData(object):
         if not page and not temp:
             temp = True
 
-        if page and key in self._pageData:
-            del self._pageData[key]
-        if temp and key in self._tempData:
-            del self._tempData[key]
+        if page:
+            self._pageData.remove(key)
+        if temp:
+            self._tempData.remove(key)
 
 #___________________________________________________________________________________________________ compile
     def compile(self):
@@ -325,23 +322,12 @@ class PageData(object):
             return u''
         return FileUtils.getContents(self.sourcePath)
 
-#___________________________________________________________________________________________________ _getFromDataDicts
-    def _getFromDataDicts(self, key, items):
-        out = []
-        for item in items:
-            for value in item.items():
-                if value[0].lower() == key:
-                    out.append(value[1])
-        if out:
-            return out
-        return self._GET_NULL
-
 #___________________________________________________________________________________________________ _loadPageData
     def _loadPageData(self):
         path = self._definitionPath
         if not path or not os.path.exists(path):
             return False
-        self._pageData = DictUtils.lowerDictKeys(JSON.fromFile(path))
+        self._pageData.data = DictUtils.lowerDictKeys(JSON.fromFile(path))
 
         pageVars = self.getMerged('PAGE_VARS', dict())
         self.addItem('PAGE_VARS', pageVars)

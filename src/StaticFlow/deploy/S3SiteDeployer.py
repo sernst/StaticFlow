@@ -24,6 +24,8 @@ class S3SiteDeployer(object):
 
     _STRING_EXTENSIONS = ('.html', '.js', '.css', '.xml', '.json', '.txt')
 
+    _FORCE_HTML_EXTENSIONS = ('.html', '.xml', '.txt')
+
 #___________________________________________________________________________________________________ __init__
     def __init__(self, localRootPath, sourceWebRootPath, forceHtml =False, forceAll =False):
         """Creates a new instance of S3SiteDeployer."""
@@ -78,9 +80,14 @@ class S3SiteDeployer(object):
             else:
                 headers = dict()
 
-            lastModified = ArgsUtils.extract('_LAST_MODIFIED', None, headers)
-            if lastModified:
-                lastModified = TimeUtils.webTimestampToDateTime(lastModified)
+            if self._forceAll:
+                lastModified = None
+            elif self._forceHtml and StringUtils.ends(name, self._FORCE_HTML_EXTENSIONS):
+                lastModified = None
+            else:
+                lastModified = ArgsUtils.extract('_LAST_MODIFIED', None, headers)
+                if lastModified:
+                    lastModified = TimeUtils.webTimestampToDateTime(lastModified)
 
             kwargs = dict(
                 key=u'/' + namePath[len(self._localRootPath):].replace(u'\\', u'/').strip(u'/'),

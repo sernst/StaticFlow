@@ -2,6 +2,8 @@
 # (C)2013
 # Scott Ernst
 
+import os
+
 from pyaid.decorators.ClassGetter import ClassGetter
 from pyaid.file.FileUtils import FileUtils
 
@@ -13,6 +15,11 @@ class StaticFlowEnvironment(object):
 #                                                                                       C L A S S
 
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
+
+#___________________________________________________________________________________________________ GS: nodePackageManagerPath
+    @ClassGetter
+    def nodePackageManagerPath(self):
+        return FileUtils.createPath(os.environ['APPDATA'], 'npm', isDir=True)
 
 #___________________________________________________________________________________________________ GS: rootTemplatePath
     @ClassGetter

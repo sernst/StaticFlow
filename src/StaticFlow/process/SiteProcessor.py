@@ -7,6 +7,7 @@ import shutil
 import tempfile
 
 from pyaid.ArgsUtils import ArgsUtils
+from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.debug.Logger import Logger
 from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
@@ -60,7 +61,7 @@ class SiteProcessor(object):
         )
 
         try:
-            self._siteData = DictUtils.lowerDictKeys(JSON.fromFile(
+            self._siteData = ConfigsDict(JSON.fromFile(
                 FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True)
             ))
         except Exception, err:
@@ -135,13 +136,6 @@ class SiteProcessor(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
-#___________________________________________________________________________________________________ getSiteData
-    def getSiteData(self, key, defaultValue =None):
-        key = key.lower()
-        if key in self._siteData:
-            return self._siteData[key]
-        return defaultValue
-
 #___________________________________________________________________________________________________ run
     def run(self):
         try:
@@ -178,9 +172,8 @@ class SiteProcessor(object):
         #-------------------------------------------------------------------------------------------
         # COMPILE
         #       Compiles source files to the target root folder
-        args = dict(npmPath=os.path.join(os.environ['APPDATA'], 'npm'))
         currentPath = os.curdir
-        os.path.walk(self.sourceWebRootPath, self._compileWalker, args)
+        os.path.walk(self.sourceWebRootPath, self._compileWalker, None)
         os.chdir(currentPath)
 
         #-------------------------------------------------------------------------------------------
@@ -194,6 +187,8 @@ class SiteProcessor(object):
 
         for rssGenerator in self._rssGenerators:
             rssGenerator.write()
+
+        self._writeGoogleFiles()
 
         #-------------------------------------------------------------------------------------------
         # CLEANUP
@@ -219,74 +214,12 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):
-        os.chdir(path)
-
         for name in names:
+            namePath = FileUtils.createPath(path, name, isFile=True)
             if name.endswith('.coffee'):
-                self._compileCoffeescript(path, name, args)
+                SiteProcessUtils.compileCoffeescript(self, namePath)
             elif name.endswith('.css'):
-                self._compileCss(path, name, args)
-
-#___________________________________________________________________________________________________ _compileCss
-    def _compileCss(self, path, name, args):
-        if self.isLocal:
-            return False
-
-        sourcePath = FileUtils.createPath(path, name, isFile=True)
-        outPath = FileUtils.changePathRoot(
-            sourcePath, self.sourceWebRootPath, self.targetWebRootPath
-        )
-        FileUtils.getDirectoryOf(outPath, createIfMissing=True)
-
-        result = SystemUtils.executeCommand([
-            FileUtils.createPath(args['npmPath'], 'minify', isFile=True),
-            sourcePath,
-            outPath
-        ])
-        if result['code']:
-            print result['error']
-            print 'ERROR: CSS compilation failure'
-            return False
-        print 'COMPRESSED:', name
-        return True
-
-#___________________________________________________________________________________________________ _compileCoffeescript
-    def _compileCoffeescript(self, path, name, args):
-        coffeePath = os.path.join(args['npmPath'], 'coffee')
-        uglifyPath = os.path.join(args['npmPath'], 'uglifyjs')
-
-        csPath  = os.path.join(path, name)
-        outPath = FileUtils.changePathRoot(
-            csPath[:-6] + 'js', self.sourceWebRootPath, self.targetWebRootPath
-        )
-        FileUtils.getDirectoryOf(outPath, createIfMissing=True)
-
-        result = SystemUtils.executeCommand(
-            '%s --output "%s" --compile "%s"' % (coffeePath, os.path.dirname(outPath), csPath)
-        )
-        if result['code']:
-            print 'FAILED >> Unable to compile:', name
-            print result
-            return False
-        else:
-            print 'COMPILED:', name
-
-        SiteProcessUtils.createHeaderFile(outPath, FileUtils.getUTCModifiedDatetime(csPath))
-        if self.isLocal:
-            return True
-
-        tempOutPath = outPath + '.tmp'
-        shutil.move(outPath, tempOutPath)
-        result = SystemUtils.executeCommand(uglifyPath + ' ' + tempOutPath + ' > ' + outPath)
-        os.remove(tempOutPath)
-
-        if result['code']:
-            print 'FAILED >> Unable to compress:', name
-            print result
-            return False
-        else:
-            print 'COMPRESSED:', name
-        return True
+                SiteProcessUtils.compileCss(self, namePath)
 
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
@@ -301,6 +234,20 @@ class SiteProcessor(object):
             if not os.path.isfile(itemPath) or not StringUtils.ends(name, self._SKIP_EXTENSIONS):
                 continue
             os.remove(itemPath)
+
+#___________________________________________________________________________________________________ _writeGoogleFiles
+    def _writeGoogleFiles(self):
+        vid = self.siteData.get(('GOOGLE', 'SITE_VERIFY_ID'))
+        if not vid:
+            return False
+
+        if not vid.endswith('.html'):
+            vid += '.html'
+
+        path = FileUtils.createPath(self.targetWebRootPath, vid, isFile=True)
+        FileUtils.putContents(u'google-site-verification: ' + vid, path)
+        SiteProcessUtils.createHeaderFile(path, None)
+        return True
 
 #===================================================================================================
 #                                                                               I N T R I N S I C
