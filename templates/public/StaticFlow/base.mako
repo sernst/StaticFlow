@@ -21,11 +21,6 @@
         window.PAGE=${mr.pageVars | n};
     </script>
     <script src="${mr.loader}" async></script>
-</head>
-
-<body>
-
-${next.body() | n}
 
 % if mr.pageData.get(('GOOGLE', 'TRACKING_ID')):
 <script>
@@ -37,6 +32,9 @@ ${next.body() | n}
   ga('send', 'pageview');
 </script>
 % endif
+</head>
 
+<body>
+${next.body() | n}
 </body>
 </html>
