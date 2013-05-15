@@ -76,7 +76,10 @@ class SiteProcessor(object):
         # Specifies whether the website processing is local or deployed. In the deployed case
         self._isLocal = ArgsUtils.get('isLocal', None, kwargs)
 
-        self._cdnRootFolder = '' if self.isLocal else TimeUtils.getUtcTagTimestamp()
+        if self.isLocal:
+            self._cdnRootFolder = u''
+        else:
+            self._cdnRootFolder = u'__cdn__' + TimeUtils.getUtcTagTimestamp()
 
 #===================================================================================================
 #                                                                                   G E T / S E T

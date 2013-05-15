@@ -46,11 +46,15 @@ class S3Bucket(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
+#___________________________________________________________________________________________________ listKeys
+    def listKeys(self, namePrefix):
+        pass
+
 #___________________________________________________________________________________________________ getKey
     def getKey(self, key, createIfMissing =True):
         if isinstance(key, basestring):
             out = self._bucket.get_key(key_name=key)
-            if not out:
+            if createIfMissing and not out:
                 out = Key(self._bucket, key)
             return out
 

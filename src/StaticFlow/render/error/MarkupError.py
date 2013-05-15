@@ -137,6 +137,7 @@ class MarkupError(object):
 
         if not self._processor:
             print "No processor available to log the error. Error aborted."
+            print self.getLogData()
             return
 
         if self._verbose:

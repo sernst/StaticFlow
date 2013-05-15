@@ -88,6 +88,7 @@ class SiteProcessUtils(object):
         else:
             return u''
 
+        url = url.replace(u'\\', u'/')
         if isIndex and not url.endswith(u'/'):
             url += u'/'
         return url

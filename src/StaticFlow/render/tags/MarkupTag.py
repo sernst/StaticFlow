@@ -579,17 +579,17 @@ class MarkupTag(object):
         forceAsStyle =False
     ):
 
-        if not forceAsStyle:
-            colorClass = self.attrs.getAsColorClass(
-                TagAttributesEnum.COLOR,
-                background=background,
-                defaultValue=None,
-                allowFailure=True
-            )
-
-            if colorClass:
-                self.attrs.classes.add(colorClass, group)
-                return True
+        # if not forceAsStyle:
+        #     colorClass = self.attrs.getAsColorClass(
+        #         TagAttributesEnum.COLOR,
+        #         background=background,
+        #         defaultValue=None,
+        #         allowFailure=True
+        #     )
+        #
+        #     if colorClass:
+        #         self.attrs.classes.add(colorClass, group)
+        #         return True
 
         color = self.attrs.getAsColorValue(
             TagAttributesEnum.COLOR,

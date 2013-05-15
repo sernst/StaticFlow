@@ -254,7 +254,7 @@ class AttributeData(DomRenderData):
 #___________________________________________________________________________________________________ GS: explicitAccent
     @property
     def explicitAccent(self):
-        return self._explicitAccent
+        return False #return self._explicitAccent
 
 #___________________________________________________________________________________________________ GS: accented
     @property
@@ -265,17 +265,18 @@ class AttributeData(DomRenderData):
 
         @@@returns bool
         """
-        if self._accented is None:
-            # Search through parent tags for an explicit accent and if one exists inherit the
-            # accented state from that parent.
-            parent = self._tag.parent
-            while parent:
-                if parent.attrs.explicitAccent:
-                    self._accented = parent.attrs.accented
-                    break
-                parent = parent.parent
-
-        return self._accented
+        return False
+        # if self._accented is None:
+        #     # Search through parent tags for an explicit accent and if one exists inherit the
+        #     # accented state from that parent.
+        #     parent = self._tag.parent
+        #     while parent:
+        #         if parent.attrs.explicitAccent:
+        #             self._accented = parent.attrs.accented
+        #             break
+        #         parent = parent.parent
+        #
+        # return self._accented
 
 #___________________________________________________________________________________________________ GS: primaryAttribute
     @property
@@ -297,19 +298,20 @@ class AttributeData(DomRenderData):
 
         @@@returns Web_theme
         """
-        if self._theme:
-            return self._theme
-
-        parent = self._tag.parent
-        theme  = None
-        while parent and not theme:
-            theme  = parent.attrs.theme
-            parent = parent.parent
-
-        if theme is None:
-            return self._processor.theme
-
-        return theme
+        return None
+        # if self._theme:
+        #     return self._theme
+        #
+        # parent = self._tag.parent
+        # theme  = None
+        # while parent and not theme:
+        #     theme  = parent.attrs.theme
+        #     parent = parent.parent
+        #
+        # if theme is None:
+        #     return self._processor.theme
+        #
+        # return theme
 
 #___________________________________________________________________________________________________ GS: backColors
     @property
@@ -319,7 +321,7 @@ class AttributeData(DomRenderData):
 
         @@@returns Web_ScenicColorBundle
         """
-        return self.theme.fillColorBundle if self.accented else self.theme.backColorBundle
+        return None #return self.theme.fillColorBundle if self.accented else self.theme.backColorBundle
 
 #___________________________________________________________________________________________________ GS: focalColors
     @property
@@ -329,7 +331,7 @@ class AttributeData(DomRenderData):
 
         @@@returns Web_FocalColorBundle
         """
-        return self.theme.accentColorBundle if self.accented else self.theme.frontColorBundle
+        return None #return self.theme.accentColorBundle if self.accented else self.theme.frontColorBundle
 
 #___________________________________________________________________________________________________ GS: styleGroup
     @property
@@ -351,7 +353,7 @@ class AttributeData(DomRenderData):
 
         @@@returns bool
         """
-        return self._themeChanged
+        return False #return self._themeChanged
 
 #___________________________________________________________________________________________________ GS: uid
     @property
@@ -1095,36 +1097,36 @@ class AttributeData(DomRenderData):
         else:
             c = value
 
-        front = self.focalColors
-        back  = self.backColors
-        out   = None
-        if c in ThemeColorEnum.HIGHLIGHT[1]:
-            out = front.highlightColor.clone()
-        elif c in ThemeColorEnum.LINK[1]:
-            out = front.linkColor.clone()
-        elif c in ThemeColorEnum.SOFT[1]:
-            out = front.softColor.clone()
-        elif c in ThemeColorEnum.BUTTON[1]:
-            out = front.buttonColor.clone()
-        elif c in ThemeColorEnum.FOCAL[1]:
-            out = front.baseColor.clone()
-        elif c in ThemeColorEnum.BACK[1]:
-            out = back.baseColor.clone()
-        elif c in ThemeColorEnum.DODGE[1]:
-            out = back.dodgeColor.clone()
-        elif c in ThemeColorEnum.BURN[1]:
-            out = back.burnColor.clone()
-        elif c in ThemeColorEnum.BORDER[1]:
-            out = back.borderColor.clone()
-        elif c in ThemeColorEnum.BACK_BUTTON[1]:
-            out = back.buttonColor.clone()
-        elif c is not None:
-            try:
-                out = ColorValue(c)
-            except Exception, err:
-                if onFailure:
-                    return onFailure
-                out = None
+        # front = self.focalColors
+        # back  = self.backColors
+        # out   = None
+        # if c in ThemeColorEnum.HIGHLIGHT[1]:
+        #     out = front.highlightColor.clone()
+        # elif c in ThemeColorEnum.LINK[1]:
+        #     out = front.linkColor.clone()
+        # elif c in ThemeColorEnum.SOFT[1]:
+        #     out = front.softColor.clone()
+        # elif c in ThemeColorEnum.BUTTON[1]:
+        #     out = front.buttonColor.clone()
+        # elif c in ThemeColorEnum.FOCAL[1]:
+        #     out = front.baseColor.clone()
+        # elif c in ThemeColorEnum.BACK[1]:
+        #     out = back.baseColor.clone()
+        # elif c in ThemeColorEnum.DODGE[1]:
+        #     out = back.dodgeColor.clone()
+        # elif c in ThemeColorEnum.BURN[1]:
+        #     out = back.burnColor.clone()
+        # elif c in ThemeColorEnum.BORDER[1]:
+        #     out = back.borderColor.clone()
+        # elif c in ThemeColorEnum.BACK_BUTTON[1]:
+        #     out = back.buttonColor.clone()
+        # elif c is not None:
+        try:
+            out = ColorValue(c)
+        except Exception, err:
+            if onFailure:
+                return onFailure
+            out = None
 
         if out:
             if isinstance(value, basestring):
@@ -1236,18 +1238,28 @@ class AttributeData(DomRenderData):
                 isDefault = a[index+1:index+3] == '//'
 
             # Default properties are assigned to value
-            quotes = ['\'', '"']
-            value  = None
-            name   = None
+            quotes   = ['\'', '"']
+            value    = None
+            name     = None
+            inQuotes = False
             try:
                 if isDefault:
                     name  = 'value'
-                    value = a[1:-1] if a[0] in quotes and a[-1] in quotes else a
+                    if a[0] in quotes and a[-1] in quotes:
+                        value    = a[1:-1]
+                        inQuotes = True
+                    else:
+                        value = a
                 else:
                     attr['vstart'] += index + 1
                     name    = a[:index].lower()
                     name    = name[0] + name[1:].replace('-', '').replace('_', '')
-                    value   = a[index+2:-1] if a[index+1] in quotes and a[-1] in quotes else a[index+1:]
+
+                    if a[index+1] in quotes and a[-1] in quotes:
+                        value    = a[index+2:-1]
+                        inQuotes = True
+                    else:
+                        value = a[index+1:]
             except Exception, err:
                 MarkupTagError(
                     tag=self._tag,
@@ -1265,10 +1277,15 @@ class AttributeData(DomRenderData):
                 continue
 
             # If the property is a comma-delimited list, convert the string into an array
-            if value.find(',') != -1:
+            if not inQuotes and value.find(',') != -1:
                 value = AttributeData._COMMA_LIST_CLEANUP.sub(',',value)
-                la    = TextAnalyzer(value, False, AttributeData._LIST_BLOCKS,
-                                     initialBlock=AttributeData._LIST_BLOCKS[-1])
+                la = TextAnalyzer(
+                    value,
+                    False,
+                    AttributeData._LIST_BLOCKS,
+                    initialBlock=AttributeData._LIST_BLOCKS[-1]
+                )
+
                 la.analyze()
                 value = []
                 for b in la.blocks:

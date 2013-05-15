@@ -157,7 +157,7 @@ class PageData(object):
         path = self.targetPath
         if not path:
             return None
-        return '/' + path[len(self.processor.targetWebRootPath):]
+        return u'/' + path[len(self.processor.targetWebRootPath):].replace(u'\\', u'/')
 
 #___________________________________________________________________________________________________ GS: dataSources
     @property
