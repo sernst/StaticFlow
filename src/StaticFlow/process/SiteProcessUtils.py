@@ -126,12 +126,12 @@ class SiteProcessUtils(object):
             '%s --output "%s" --compile "%s"' % (coffeePath, os.path.dirname(outPath), csPath)
         )
         if result['code']:
-            print 'ERROR: [Failed to compile]:', path
+            processor.log.write(u'ERROR: [Failed to compile]: ' + unicode(path))
             print result
             os.chdir(iniDirectory)
             return False
         else:
-            print 'COMPILED [js]:', path
+            processor.log.write(u'COMPILED [js]: ' + unicode(path))
 
         lastModified = FileUtils.getUTCModifiedDatetime(csPath)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
@@ -145,13 +145,13 @@ class SiteProcessUtils(object):
         os.remove(tempOutPath)
 
         if result['code']:
-            print 'ERROR [Failed to compress]:', outPath
-            print result
+            processor.log.write(u'ERROR [Failed to compress]: ' + unicode(outPath))
+            processor.log.write(unicode(result))
             os.chdir(iniDirectory)
             return False
 
         cls.copyToCdnFolder(outPath, processor, lastModified)
-        print 'COMPRESSED [js]:', outPath
+        processor.log.write(u'COMPRESSED [js]: ' + unicode(outPath))
         return True
 
 #___________________________________________________________________________________________________ compileCss
@@ -164,7 +164,7 @@ class SiteProcessUtils(object):
 
         if processor.isLocal:
             shutil.copy(path, outPath)
-            print 'COPIED [css]:', path
+            processor.log.write(u'COPIED [css]: ' + unicode(path))
         else:
             iniDirectory = os.curdir
             os.chdir(os.path.dirname(path))
@@ -176,12 +176,12 @@ class SiteProcessUtils(object):
                 outPath
             ])
             if result['code']:
-                print result['error']
-                print 'ERROR [CSS compilation failure]:', path
+                processor.log.write(unicode(result['error']))
+                processor.log.write(u'ERROR [CSS compilation failure]: ' + unicode(path))
                 os.chdir(iniDirectory)
                 return False
 
-            print 'COMPRESSED [css]:', path
+            processor.log.write(u'COMPRESSED [css]: ' +  unicode(path))
             os.chdir(iniDirectory)
 
         source = FileUtils.getContents(outPath)

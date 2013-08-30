@@ -11,7 +11,6 @@ from pyaid.debug.Logger import Logger
 from pyaid.reflection.Reflection import Reflection
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
-from StaticFlow.render.tags.TagDefinitions import TagDefinitions
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.error.MarkupTagError import MarkupTagError
 from StaticFlow.render.error.MarkupAttributeError import MarkupAttributeError
@@ -24,14 +23,12 @@ class MarkupTag(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    TAG = ''
+    TAG      = ''
 
     _TAG_LIST                      = None
     _MARGIN_TOP_STYLE_ATTR_PATTERN = re.compile('margin-top:[^\'";]+')
     _STYLE_ATTR_PATTERN            = re.compile('style=(("[^"]*")|(\'[^\']*\'))')
     _TAG_INSERT_PATTERN            = re.compile('<[^>]+>')
-
-    _rootPackage = None
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
@@ -386,7 +383,7 @@ class MarkupTag(object):
 
 #___________________________________________________________________________________________________ contains
     def contains(self, index):
-        return self.start() <= index and self.end() > index
+        return self.start() <= index < self.end()
 
 #___________________________________________________________________________________________________ addResizerClass
     def addResizerClass(self):
@@ -423,23 +420,16 @@ class MarkupTag(object):
 
         if MarkupTag._TAG_LIST is None:
             tags = dict()
+            from StaticFlow.render.tags.TagDefinitions import TagDefinitions
             for tagDef in Reflection.getReflectionList(TagDefinitions):
-                tags[tagDef.name] = tagDef
+                tags[tagDef.TAG] = tagDef
             MarkupTag._TAG_LIST = tags
 
         classImport = MarkupTag._TAG_LIST.get(name, None)
         if classImport is None:
             return None
 
-        if MarkupTag._rootPackage is None:
-            MarkupTag._rootPackage = '.'.join(MarkupTag.__module__.split('.')[:-1])
-
-        package = [MarkupTag._rootPackage, classImport.tagClass]
-        if classImport.package:
-            package.insert(-1, classImport.package)
-
-        res = __import__('.'.join(package), globals(), locals(), [classImport.tagClass])
-        return getattr(res, classImport.tagClass)(processor, block, index, name)
+        return classImport(processor, block, index, name)
 
 #___________________________________________________________________________________________________ getClassAttr
     def getClassAttr(self, attr, defaultValue =None):
@@ -607,7 +597,8 @@ class MarkupTag(object):
 
 #___________________________________________________________________________________________________ _addGroupRenderData
     def _addGroupRenderData(self):
-        if self.tagName == TagDefinitions.GROUP.name:
+        from StaticFlow.render.tags.definitions.GroupTag import GroupTag
+        if self.tagName == GroupTag.TAG:
             return
 
         groups, groupsKey = self.attrs.get(

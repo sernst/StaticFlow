@@ -1,2 +1,8 @@
 .idea
 *.pyc
+/bin/installer.nsi
+/bin/setup.log
+/bin/setup.py
+/bin/build
+/bin/resources
+/bin/dist

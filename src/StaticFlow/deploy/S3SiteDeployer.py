@@ -27,8 +27,9 @@ class S3SiteDeployer(object):
     _FORCE_HTML_EXTENSIONS = ('.html', '.xml', '.txt')
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, localRootPath, sourceWebRootPath, forceHtml =False, forceAll =False):
+    def __init__(self, localRootPath, sourceWebRootPath, forceHtml =False, forceAll =False, **kwargs):
         """Creates a new instance of S3SiteDeployer."""
+        self._log               = ArgsUtils.getLogger(self, kwargs)
         self._localRootPath     = FileUtils.cleanupPath(localRootPath, isDir=True)
         self._sourceWebRootPath = FileUtils.cleanupPath(sourceWebRootPath, isDir=True)
         self._forceHtml         = forceHtml
@@ -37,14 +38,12 @@ class S3SiteDeployer(object):
         self._settings = DictUtils.lowerDictKeys(
             DictUtils.lowerDictKeys(
                 JSON.fromFile(FileUtils.createPath(sourceWebRootPath, '__site__.def', isFile=True))
-            ).get('s3', None)
-        )
+            ).get('s3', None))
 
         self._bucket = S3Bucket(
             self._settings['bucket'],
             self._settings['aws_id'],
-            self._settings['aws_secret']
-        )
+            self._settings['aws_secret'])
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -108,7 +107,7 @@ class S3SiteDeployer(object):
                 result = self._bucket.putFile(filename=namePath, **kwargs)
 
             if result:
-                print 'DEPLOYED:', namePath, '->', kwargs['key']
+                self._log.write(u'DEPLOYED: ' + unicode(namePath) + u'->' + unicode(kwargs['key']))
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

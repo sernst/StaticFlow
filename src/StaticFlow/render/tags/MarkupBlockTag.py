@@ -18,7 +18,7 @@ class MarkupBlockTag(MarkupTag):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    TAG = ''
+    TAG               = ''
 
     REMOVE_NEWLINES   = 'remove'
     BREAK_ON_NEWLINES = 'break'

@@ -411,7 +411,8 @@ class PageData(object):
 
         if mp.hasErrors:
             for renderError in mp.renderErrors:
-                print '\n' + 100*'-' + '\n   RENDER ERROR:\n', renderError.echo()
+                self._processor.log.write(
+                    u'\n' + 100*u'-' + u'\n   RENDER ERROR:\n' + unicode(renderError.echo()))
             return False
 
         self._date = self._parseDate(ArgsUtils.extract('date', None, mp.metadata))
@@ -455,7 +456,7 @@ class PageData(object):
         result = mr.render()
 
         if not mr.success:
-            print mr.errorMessage
+            self._processor.log.write(u'HTML Page Creation Error: ' +  unicode(mr.errorMessage))
             return False
 
         try:
@@ -473,9 +474,10 @@ class PageData(object):
             # Add the page to the sitemap
             self.processor.sitemap.add(self)
 
-            print 'CREATED:', self.targetPath, ' -> ', self.targetUrl
+            self._processor.log.write(
+                u'CREATED: ' + unicode(self.targetPath) + u' -> ' + self.targetUrl)
         except Exception, err:
-            print err
+            self._processor.log.writeError(u'HTML Page Creation Error', err)
             return False
         return True
 

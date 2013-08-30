@@ -3,13 +3,11 @@
 # Scott Ernst
 
 import os
-import re
 import shutil
 import tempfile
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.config.ConfigsDict import ConfigsDict
-from pyaid.debug.Logger import Logger
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
@@ -29,15 +27,14 @@ class SiteProcessor(object):
 
     _SKIP_EXTENSIONS = (
         '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml',
-        '.sfmlp', '.sfmeta'
-    )
+        '.sfmlp', '.sfmeta')
 
     _FILE_COPY_TYPES = ('.js', '.png', '.gif', '.jpg', '.ico')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
         """Creates a new instance of SiteProcessor."""
-        self._log = Logger(self, printOut=True)
+        self._log = ArgsUtils.getLogger(self, kwargs)
         self._sourceRootFolderName = sourceRootFolder
 
         # NGinx root path in which all files reside
@@ -83,6 +80,11 @@ class SiteProcessor(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: log
+    @property
+    def log(self):
+        return self._log
 
 #___________________________________________________________________________________________________ GS: containerPath
     @property
@@ -280,14 +282,13 @@ class SiteProcessor(object):
             itemPath     = FileUtils.createPath(directory, item, isFile=True)
             itemDefsPath = itemPath.rsplit('.', 1)[0] + '.def'
             if os.path.exists(itemDefsPath):
-                print 'FOLDER[skipped already defs exists]:', item
+                self._log.write(u'FOLDER[skipped already defs exists]: ' + unicode(item))
                 continue
 
             test = SiteProcessUtils.testFileFilter(
                 itemPath,
                 cd.get(('FOLDER', 'EXTENSION_FILTER')),
-                cd.get(('FOLDER', 'NAME_FILTER'))
-            )
+                cd.get(('FOLDER', 'NAME_FILTER')))
             if not test:
                 continue
 

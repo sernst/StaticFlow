@@ -73,15 +73,13 @@ class MarkupProcessor(TextAnalyzer):
         self._renderErrors = []
         self._tagIndex     = -1
 
-        TextAnalyzer.__init__(
-            self,
+        super(MarkupProcessor, self).__init__(
             source,
             ArgsUtils.extract('debug', False, kwargs),
             blocks,
             debugData,
             stripSource=False,
-            **kwargs
-        )
+            **kwargs)
 
         self._log.trace         = True
         self._result            = None
@@ -377,23 +375,20 @@ class MarkupProcessor(TextAnalyzer):
                     self._log.writeError([
                         'Failed to create tag',
                         'Block: ' + str(g),
-                        'Tag Name: ' + tagName
-                    ], err)
+                        'Tag Name: ' + tagName], err)
 
                     MarkupGlobalError(
                         processor=self,
                         code=MarkupGlobalError.TAG_CREATION_FAILED,
                         block=g,
-                        replacements=[[u'#TAG#', tagName]]
-                    ).log()
+                        replacements=[[u'#TAG#', tagName]]).log()
                     continue
 
                 if t is None:
                     MarkupGlobalError(
                         processor=self,
                         code=MarkupGlobalError.FICTIONAL_TAG,
-                        block=g
-                    ).log()
+                        block=g).log()
                     self._addError('Unrecognized tag: ' + str(g))
                     continue
 

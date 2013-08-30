@@ -16,6 +16,8 @@ class StaticFlowEnvironment(object):
 
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
 
+    _templateRootOverridePath = None
+
 #___________________________________________________________________________________________________ GS: baseTime
     @ClassGetter
     def baseTime(self):
@@ -32,9 +34,20 @@ class StaticFlowEnvironment(object):
 #___________________________________________________________________________________________________ GS: rootTemplatePath
     @ClassGetter
     def rootTemplatePath(cls):
-        return FileUtils.createPath(cls._ENV_PATH, '..', '..', 'templates', isDir=True)
+        if cls._templateRootOverridePath is not None:
+            return cls._templateRootOverridePath
+        return FileUtils.createPath(
+            cls._ENV_PATH, '..', '..', 'resources', 'apps', 'StaticFlow', 'templates', isDir=True)
 
 #___________________________________________________________________________________________________ GS: rootPublicTemplatePath
     @ClassGetter
     def rootPublicTemplatePath(cls):
         return FileUtils.createPath(cls.rootTemplatePath, 'public', isDir=True)
+
+#===================================================================================================
+#                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ setTemplateRootPath
+    @classmethod
+    def setTemplateRootPath(cls, path):
+        cls._templateRootOverridePath = FileUtils.cleanupPath(path, isDir=True)

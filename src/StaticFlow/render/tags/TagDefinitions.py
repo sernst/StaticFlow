@@ -2,9 +2,44 @@
 # (C)2012-2013
 # Scott Ernst and Eric David Wills
 
-from collections import namedtuple
-
-TagDefinition = namedtuple('TagDefinition', ['name', 'tagClass', 'package', 'isBlock'])
+from StaticFlow.render.tags.box.BoxTag import BoxTag
+from StaticFlow.render.tags.box.BorderTag import BorderTag
+from StaticFlow.render.tags.box.SqueezeBoxTag import SqueezeBoxTag
+from StaticFlow.render.tags.definitions.GroupTag import GroupTag
+from StaticFlow.render.tags.definitions.MetaDataTag import MetaDataTag
+from StaticFlow.render.tags.definitions.SummaryTag import SummaryTag
+from StaticFlow.render.tags.definitions.TitleTag import TitleTag
+from StaticFlow.render.tags.external.HuluTag import HuluTag
+from StaticFlow.render.tags.external.SlideShareTag import SlideShareTag
+from StaticFlow.render.tags.external.SoundCloudTag import SoundCloudTag
+from StaticFlow.render.tags.external.TwitterTag import TwitterTag
+from StaticFlow.render.tags.external.VimeoTag import VimeoTag
+from StaticFlow.render.tags.external.YouTubeTag import YouTubeTag
+from StaticFlow.render.tags.image.ImageTag import ImageTag
+from StaticFlow.render.tags.insert.NotesTag import NotesTag
+from StaticFlow.render.tags.insert.QuoteTag import QuoteTag
+from StaticFlow.render.tags.layout.ContainerTag import ContainerTag
+from StaticFlow.render.tags.layout.GridTag import GridTag
+from StaticFlow.render.tags.layout.HangerTag import HangerTag
+from StaticFlow.render.tags.layout.LineTag import LineTag
+from StaticFlow.render.tags.layout.RowTag import RowTag
+from StaticFlow.render.tags.layout.SpacerTag import SpacerTag
+from StaticFlow.render.tags.navigation.JumpTag import JumpTag
+from StaticFlow.render.tags.style.BoldTag import BoldTag
+from StaticFlow.render.tags.style.ColorTag import ColorTag
+from StaticFlow.render.tags.style.FontTag import FontTag
+from StaticFlow.render.tags.style.ItalicsTag import ItalicsTag
+from StaticFlow.render.tags.style.SizeTag import SizeTag
+from StaticFlow.render.tags.terminal.MarkdownTag import MarkdownTag
+from StaticFlow.render.tags.terminal.RawTag import RawTag
+from StaticFlow.render.tags.text.HeaderTag import HeaderTag
+from StaticFlow.render.tags.text.LinkTag import LinkTag
+from StaticFlow.render.tags.text.ListItemTag import ListItemTag
+from StaticFlow.render.tags.text.ListTag import ListTag
+from StaticFlow.render.tags.text.ParagraphTag import ParagraphTag
+from StaticFlow.render.tags.text.SubscriptTag import SubscriptTag
+from StaticFlow.render.tags.text.SuperscriptTag import SuperscriptTag
+from StaticFlow.render.tags.text.SymbolTag import SymbolTag
 
 #___________________________________________________________________________________________________ TagDefinitions
 class TagDefinitions(object):
@@ -13,146 +48,78 @@ class TagDefinitions(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
-    BOLD            = TagDefinition('b', 'BoldTag', 'style', True)
+    BOLD            = BoldTag
 
-    BORDER          = TagDefinition('border', 'BorderTag', 'box', True)
+    BORDER          = BorderTag
 
-    BOX             = TagDefinition('box', 'BoxTag', 'box', True)
+    BOX             = BoxTag
 
-    BUTTON          = TagDefinition('button', 'ButtonTag', 'ui', False)
+    COLOR           = ColorTag
 
-    CODE            = TagDefinition('code', 'CodeTag', 'terminal', True)
+    CONTAINER       = ContainerTag
 
-    COFFEECUP       = TagDefinition('coffeecup', 'CoffeecupTag', 'terminal', True)
+    FONT            = FontTag
 
-    COFFEESCRIPT    = TagDefinition('coffeescript', 'CoffeeScriptTag', 'terminal', True)
+    GRID            = GridTag
 
-    COLOR           = TagDefinition('color', 'ColorTag', 'style', True)
+    GROUP           = GroupTag
 
-    COMMENT         = TagDefinition('comment', 'CommentTag', 'external', False)
+    HANGER          = HangerTag
 
-    CONTAINER       = TagDefinition('container', 'ContainerTag', 'layout', True)
+    HEADER          = HeaderTag
 
-    CSS             = TagDefinition('css', 'CSSTag', 'terminal', True)
+    HULU            = HuluTag
 
-    DART            = TagDefinition('dart', 'DartTag', 'terminal', True)
+    ITALICS         = ItalicsTag
 
-    DEVBOX          = TagDefinition('devbox', 'DevBoxTag', 'internal', True)
+    IMAGE           = ImageTag
 
-    ELEMENT         = TagDefinition('element', 'ElementTag', 'entities', False)
+    ITEM            = ListItemTag
 
-    FONT            = TagDefinition('font', 'FontTag', 'style', True)
+    JUMP            = JumpTag
 
-    FOOTER          = TagDefinition('footer', 'FooterTag', 'elements', True)
+    LINE            = LineTag
 
-    GRADIENT        = TagDefinition('gradient', 'GradientBoxTag', 'box', True)
+    LINK            = LinkTag
 
-    GRAPH           = TagDefinition('graph', 'GraphTag', 'elements', True)
+    LIST            = ListTag
 
-    GRID            = TagDefinition('grid', 'GridTag', 'layout', True)
+    MARKDOWN        = MarkdownTag
 
-    GROUP           = TagDefinition('group', 'GroupTag', 'definitions', False)
+    META_DATA       = MetaDataTag
 
-    HAML            = TagDefinition('haml', 'HamlTag', 'terminal', True)
+    NOTE            = NotesTag
 
-    HANGER          = TagDefinition('hanger', 'HangerTag', 'layout', True)
+    PARAGRAPH       = ParagraphTag
 
-    HEADER          = TagDefinition('header', 'HeaderTag', 'text', True)
+    QUOTE           = QuoteTag
 
-    HTML            = TagDefinition('html', 'HTMLTag', 'terminal', True)
+    RAW             = RawTag
 
-    HULU            = TagDefinition('hulu', 'HuluTag', 'external', False)
+    ROW             = RowTag
 
-    ITALICS         = TagDefinition('i', 'ItalicsTag', 'style', True)
+    SIZE            = SizeTag
 
-    ICON            = TagDefinition('icon', 'IconTag', 'text', False)
+    SLIDESHARE      = SlideShareTag
 
-    IMAGE           = TagDefinition('image', 'ImageTag', 'image', False)
+    SOUNDCLOUD      = SoundCloudTag
 
-    IMAGE_URL       = TagDefinition('imageurl', 'ImageUrlTag', 'data', False)
+    SPACER          = SpacerTag
 
-    IMPLANT         = TagDefinition('implant', 'ImplantTag', 'generators', True)
+    SQUEEZE         = SqueezeBoxTag
 
-    ITEM            = TagDefinition('item', 'ListItemTag', 'text', True)
+    SYMBOL          = SymbolTag
 
-    JADE            = TagDefinition('jade', 'JadeTag', 'terminal', True)
+    SUB             = SubscriptTag
 
-    JAVASCRIPT      = TagDefinition('javascript', 'JavaScriptTag', 'terminal', True)
+    SUMMARY         = SummaryTag
 
-    JUMP            = TagDefinition('jump', 'JumpTag', 'navigation', True)
+    SUPER           = SuperscriptTag
 
-    LESS            = TagDefinition('less', 'LessTag', 'terminal', True)
+    TITLE           = TitleTag
 
-    LINE            = TagDefinition('line', 'LineTag', 'layout', False)
+    TWITTER         = TwitterTag
 
-    LINK            = TagDefinition('link', 'LinkTag', 'text', True)
+    VIMEO           = VimeoTag
 
-    LIST            = TagDefinition('list', 'ListTag', 'text', True)
-
-    MARKDOWN        = TagDefinition('markdown', 'MarkdownTag', 'terminal', True)
-
-    META_DATA       = TagDefinition('metadata', 'MetaDataTag', 'definitions', False)
-
-    MEDIA           = TagDefinition('media', 'AssetTag', 'entities', False)
-
-    NAVBAR          = TagDefinition('navbar', 'NavBarTag', 'elements', True)
-
-    NOTE            = TagDefinition('note', 'NoteTag', 'insert', True)
-
-    PAGE_URL        = TagDefinition('pageurl', 'PageUrlTag', 'data',  False)
-
-    PARAGRAPH       = TagDefinition('p', 'ParagraphTag', 'text', True)
-
-    PATTERN         = TagDefinition('pattern', 'PatternTag', 'generators', True)
-
-    QUOTE           = TagDefinition('quote', 'QuoteTag', 'insert', True)
-
-    RADIO           = TagDefinition('radio', 'RadioArrayTag', 'ui', True)
-
-    RADIO_BUTTON    = TagDefinition('radiobutton', 'RadioButtonTag', 'ui', False)
-
-    RAW             = TagDefinition('raw', 'RawTag', 'terminal', True)
-
-    ROW             = TagDefinition('row', 'RowTag', 'layout', True)
-
-    SASS            = TagDefinition('sass', 'SassTag', 'terminal', True)
-
-    SCSS            = TagDefinition('scss', 'ScssTag', 'terminal', True)
-
-    SIZE            = TagDefinition('size', 'SizeTag', 'style', True)
-
-    SLIDER          = TagDefinition('slider', 'SliderTag', 'ui', False)
-
-    SLIDESHARE      = TagDefinition('slideshare', 'SlideShareTag', 'external', False)
-
-    SOUNDCLOUD      = TagDefinition('soundcloud', 'SoundCloudTag', 'external', False)
-
-    SPACER          = TagDefinition('spacer', 'SpacerTag', 'layout', False)
-
-    SQUEEZE         = TagDefinition('squeeze', 'SqueezeBoxTag', 'box', True)
-
-    STYLUS          = TagDefinition('stylus', 'StylusTag', 'terminal', True)
-
-    SYMBOL          = TagDefinition('symbol', 'SymbolTag', 'text', False)
-
-    SUB             = TagDefinition('sub', 'SubscriptTag', 'text', True)
-
-    SUMMARY         = TagDefinition('summary', 'SummaryTag', 'definitions', True)
-
-    SUPER           = TagDefinition('sup', 'SuperscriptTag', 'text', True)
-
-    THEME           = TagDefinition('theme', 'ThemeTag', 'style', True)
-
-    TITLE           = TagDefinition('title', 'TitleTag', 'definitions', True)
-
-    TWITTER         = TagDefinition('twitter', 'TwitterTag', 'external', False)
-
-    TEXT            = TagDefinition('text', 'TextInputTag', 'ui', False)
-
-    VIMEO           = TagDefinition('vimeo', 'VimeoTag', 'external', False)
-
-    XDATA           = TagDefinition('xdata', 'XDataTag', 'data', True)
-
-    YDATA           = TagDefinition('ydata', 'YDataTag', 'data', True)
-
-    YOUTUBE         = TagDefinition('youtube', 'YouTubeTag', 'external', False)
+    YOUTUBE         = YouTubeTag
