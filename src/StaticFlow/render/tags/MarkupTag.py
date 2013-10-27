@@ -70,8 +70,7 @@ class MarkupTag(object):
             self._attrs = AttributeData(
                 self,
                 ArgsUtils.get('attributeSource', u'', kwargs),
-                attributes=attributes
-            )
+                attributes=attributes)
         else:
             self._log   = self._processor.log
             start       = self._block.start + (0 if self._procedural else len(self.tagName) + 3)
@@ -79,8 +78,7 @@ class MarkupTag(object):
                 self,
                 ArgsUtils.get('attributeSource', u'', kwargs) if self._procedural else
                     self._processor.source[start:self._block.end-1],
-                attributes=attributes
-            )
+                attributes=attributes)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -529,7 +527,11 @@ class MarkupTag(object):
                 data=data,
                 logger=self._log
             )
-            r.render(tag=self, data=self.attrs)
+            r.render(
+                tag=self,
+                data=self.attrs,
+                pageData=self.processor.pageData,
+                pageProcessor=self.processor.pageProcessor)
         except Exception, err:
             name = self.__class__.__name__
             self.log.writeError([

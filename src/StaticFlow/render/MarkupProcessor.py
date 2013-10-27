@@ -57,6 +57,9 @@ class MarkupProcessor(TextAnalyzer):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, source, **kwargs):
 
+        self.pageData      = ArgsUtils.get('pageData', None, kwargs)
+        self.pageProcessor = ArgsUtils.get('pageProcessor', None, kwargs)
+
         debugData = ArgsUtils.extract('debugData', None, kwargs)
         blocks    = {
             'root':[
@@ -335,7 +338,9 @@ class MarkupProcessor(TextAnalyzer):
 
 #___________________________________________________________________________________________________ _parseArgs
     def _parseArgs(self, **kwargs):
-        self._debug = ArgsUtils.get('debug', self._debug, kwargs)
+        self.pageProcessor  = ArgsUtils.get('pageProcessor', self.pageProcessor, kwargs)
+        self.pageData       = ArgsUtils.get('pageData', self.pageData, kwargs)
+        self._debug         = ArgsUtils.get('debug', self._debug, kwargs)
         self._allowModelCaching = True
 
 #___________________________________________________________________________________________________ _insertImpl

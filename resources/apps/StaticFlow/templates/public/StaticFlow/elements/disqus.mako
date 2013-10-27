@@ -9,7 +9,7 @@
     var disqus_identifier = '${mr.pageData.get(('DISQUS', 'UID'), mr.pageData.get('UID', mr.pageData.targetUrl))}';
 
     ## Enables developer mode on local deployments to prevent errors when testing locally
-    % if mr.processor.isLocal:
+    % if mr.pageProcessor.isLocal:
         var disqus_developer = 1;
     % endif
 

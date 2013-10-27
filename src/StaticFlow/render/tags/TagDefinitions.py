@@ -9,6 +9,7 @@ from StaticFlow.render.tags.definitions.GroupTag import GroupTag
 from StaticFlow.render.tags.definitions.MetaDataTag import MetaDataTag
 from StaticFlow.render.tags.definitions.SummaryTag import SummaryTag
 from StaticFlow.render.tags.definitions.TitleTag import TitleTag
+from StaticFlow.render.tags.external.DisqusTag import DisqusTag
 from StaticFlow.render.tags.external.HuluTag import HuluTag
 from StaticFlow.render.tags.external.SlideShareTag import SlideShareTag
 from StaticFlow.render.tags.external.SoundCloudTag import SoundCloudTag
@@ -57,6 +58,8 @@ class TagDefinitions(object):
     COLOR           = ColorTag
 
     CONTAINER       = ContainerTag
+
+    DISQUS          = DisqusTag
 
     FONT            = FontTag
 

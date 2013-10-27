@@ -310,7 +310,7 @@ class PageData(object):
 #___________________________________________________________________________________________________ _getSourceContent
     def _getSourceContent(self):
         if self._markupProcessor:
-            return self._markupProcessor.get()
+            return self._markupProcessor.get(pageData=self, pageProcessor=self.processor)
         elif not self.sourcePath:
             return u''
         return FileUtils.getContents(self.sourcePath)
@@ -332,8 +332,7 @@ class PageData(object):
             test = SiteProcessUtils.testFileFilter(
                 self.sourcePath,
                 cd.get(('FOLDER', 'EXTENSION_FILTER')),
-                cd.get(('FOLDER', 'NAME_FILTER'))
-            )
+                cd.get(('FOLDER', 'NAME_FILTER')) )
             if test:
                 self._inheritData.append(cd)
 
@@ -405,7 +404,7 @@ class PageData(object):
             return False
 
         mp = MarkupProcessor(source)
-        mp.get()
+        mp.get(pageData=self, pageProcessor=self.processor)
 
         self._markupProcessor = mp
 
@@ -437,22 +436,19 @@ class PageData(object):
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self):
         data = dict(
-            processor=self.processor,
+            pageProcessor=self.processor,
             loader=self.processor.cdnRootUrl + u'/js/int/loader.js',
             pageVars=JSON.asString(self._pageVars),
             pageData=self,
-            htmlSource=self._getSourceContent(),
-        )
+            htmlSource=self._getSourceContent())
 
         mr = MakoRenderer(
             template=self.get('TEMPLATE'),
             rootPath=[
                 self.processor.htmlTemplatePath,
-                StaticFlowEnvironment.rootPublicTemplatePath
-            ],
+                StaticFlowEnvironment.rootPublicTemplatePath],
             data=data,
-            minify=not self.processor.isLocal
-        )
+            minify=not self.processor.isLocal )
         result = mr.render()
 
         if not mr.success:
@@ -466,11 +462,9 @@ class PageData(object):
 
             FileUtils.putContents(result, self.targetPath, raiseErrors=True)
             SiteProcessUtils.createHeaderFile(
-                self.targetPath,
-                [   FileUtils.getUTCModifiedDatetime(self._definitionPath),
-                    FileUtils.getUTCModifiedDatetime(self.sourcePath)
-                ]
-            )
+                self.targetPath, [
+                    FileUtils.getUTCModifiedDatetime(self._definitionPath),
+                    FileUtils.getUTCModifiedDatetime(self.sourcePath)] )
             # Add the page to the sitemap
             self.processor.sitemap.add(self)
 

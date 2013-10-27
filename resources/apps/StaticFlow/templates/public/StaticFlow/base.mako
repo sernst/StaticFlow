@@ -13,9 +13,9 @@
     % endif
 
     <title>${mr.pageData.get('title') | n}</title>
-    <meta property="og:title" content="${mr.processor.siteData.get('TITLE')}" />
+    <meta property="og:title" content="${mr.pageProcessor.siteData.get('TITLE')}" />
     <meta property="og:url" content="${mr.pageData.targetUrl}" />
-    <meta property="og:image" content="${mr.processor.cdnRootUrl + mr.pageData.get('THUMBNAIL')}" />
+    <meta property="og:image" content="${mr.pageProcessor.cdnRootUrl + mr.pageData.get('THUMBNAIL')}" />
     <meta name="description" content="${mr.pageData.get('description') | n}" />
     <script>
         window.PAGE=${mr.pageVars | n};
