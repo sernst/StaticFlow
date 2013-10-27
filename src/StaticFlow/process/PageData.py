@@ -411,7 +411,7 @@ class PageData(object):
         if mp.hasErrors:
             for renderError in mp.renderErrors:
                 self._processor.log.write(
-                    u'\n' + 100*u'-' + u'\n   RENDER ERROR:\n' + unicode(renderError.echo()))
+                    u'\n' + 100*u'-' + u'\n   RENDER ERROR:\n' + unicode(renderError.getLogData()))
             return False
 
         self._date = self._parseDate(ArgsUtils.extract('date', None, mp.metadata))
