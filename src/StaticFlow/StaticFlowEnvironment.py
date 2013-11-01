@@ -7,6 +7,8 @@ import os
 from pyaid.decorators.ClassGetter import ClassGetter
 from pyaid.file.FileUtils import FileUtils
 
+from pyglass.app.PyGlassEnvironment import PyGlassEnvironment
+
 #___________________________________________________________________________________________________ StaticFlowEnvironment
 class StaticFlowEnvironment(object):
     """A class for..."""
@@ -29,7 +31,9 @@ class StaticFlowEnvironment(object):
 #___________________________________________________________________________________________________ GS: nodePackageManagerPath
     @ClassGetter
     def nodePackageManagerPath(self):
-        return FileUtils.createPath(os.environ['APPDATA'], 'npm', isDir=True)
+        if PyGlassEnvironment.isWindows:
+            return FileUtils.createPath(os.environ['APPDATA'], 'npm', isDir=True)
+        return '/usr/local/bin/'
 
 #___________________________________________________________________________________________________ GS: rootTemplatePath
     @ClassGetter
