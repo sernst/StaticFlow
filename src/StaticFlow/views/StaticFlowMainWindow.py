@@ -23,10 +23,8 @@ class StaticFlowMainWindow(BaseWindow):
             widgets={
                 'home':StaticFlowHomeWidget,
                 'recent':StaticFlowRecentWidget,
-                'deploy':StaticFlowDeployWidget
-            },
-            **kwargs
-        )
+                'deploy':StaticFlowDeployWidget },
+            **kwargs )
 
         self._projectData = None
 
