@@ -32,6 +32,7 @@
   ga('send', 'pageview');
 </script>
 % endif
+    ${mr.pageData.cssTags | n}
 </head>
 
 <body>

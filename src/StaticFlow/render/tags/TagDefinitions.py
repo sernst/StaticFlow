@@ -31,6 +31,7 @@ from StaticFlow.render.tags.style.ColorTag import ColorTag
 from StaticFlow.render.tags.style.FontTag import FontTag
 from StaticFlow.render.tags.style.ItalicsTag import ItalicsTag
 from StaticFlow.render.tags.style.SizeTag import SizeTag
+from StaticFlow.render.tags.terminal.CssTag import CssTag
 from StaticFlow.render.tags.terminal.MarkdownTag import MarkdownTag
 from StaticFlow.render.tags.terminal.RawTag import RawTag
 from StaticFlow.render.tags.text.HeaderTag import HeaderTag
@@ -58,6 +59,8 @@ class TagDefinitions(object):
     COLOR           = ColorTag
 
     CONTAINER       = ContainerTag
+
+    CSS             = CssTag
 
     DISQUS          = DisqusTag
 

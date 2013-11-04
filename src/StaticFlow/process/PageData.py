@@ -55,6 +55,14 @@ class PageData(object):
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: cssTags
+    @property
+    def cssTags(self):
+        if self._markupProcessor is None:
+            return u''
+        css = self._markupProcessor.cssStyles
+        return css if css is not None else u''
+
 #___________________________________________________________________________________________________ GS: pageVars
     @property
     def pageVars(self):
