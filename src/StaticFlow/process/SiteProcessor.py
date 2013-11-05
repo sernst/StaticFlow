@@ -13,6 +13,7 @@ from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
 from pyaid.time.TimeUtils import TimeUtils
 
+from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.process.PageDataManager import PageDataManager
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
@@ -197,6 +198,14 @@ class SiteProcessor(object):
         #       structure in the process
         os.path.walk(self.sourceWebRootPath, self._copyWalker, None)
 
+        #--- Loader.js ---#
+        source = FileUtils.createPath(
+            StaticFlowEnvironment.rootResourcePath, 'web', 'js', 'loader.js', isFile=True)
+        target = FileUtils.createPath(
+            self.targetWebRootPath, 'js', 'loader.js', isFile=True)
+
+        shutil.copy2(source, target)
+
         #-------------------------------------------------------------------------------------------
         # COMPILE
         #       Compiles source files to the target root folder
@@ -233,8 +242,7 @@ class SiteProcessor(object):
 
             sourcePath = FileUtils.createPath(path, item)
             destPath   = FileUtils.changePathRoot(
-                sourcePath, self.sourceWebRootPath, self.targetWebRootPath
-            )
+                sourcePath, self.sourceWebRootPath, self.targetWebRootPath)
             FileUtils.getDirectoryOf(destPath, createIfMissing=True)
             shutil.copy(sourcePath, destPath)
 

@@ -445,7 +445,7 @@ class PageData(object):
     def _createHtmlPage(self):
         data = dict(
             pageProcessor=self.processor,
-            loader=self.processor.cdnRootUrl + u'/js/int/loader.js',
+            loader=self.processor.cdnRootUrl + u'/js/loader.js',
             pageVars=JSON.asString(self._pageVars),
             pageData=self,
             htmlSource=self._getSourceContent())

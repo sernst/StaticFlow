@@ -7,6 +7,7 @@ import re
 import shutil
 import datetime
 
+from pyaid.OsUtils import OsUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
@@ -103,32 +104,52 @@ class SiteProcessUtils(object):
             return []
         return out.split('/')
 
+#___________________________________________________________________________________________________ compileCoffeescriptFile
+    @classmethod
+    def compileCoffeescriptFile(cls, source, destFolder, minify =True):
+        iniDirectory = os.curdir
+        os.chdir(os.path.dirname(source))
+
+        cmd = cls.modifyNodeCommand([
+            StaticFlowEnvironment.getNodeCommandAbsPath('coffee'),
+            '--output', '"%s"' % destFolder,
+            '--compile', '"%s"' % source ])
+
+        result = SystemUtils.executeCommand(cmd)
+        if not minify or result['code']:
+            os.chdir(iniDirectory)
+            return result
+
+        name = os.path.splitext(os.path.basename(source))[0] + '.js'
+        dest = FileUtils.createPath(destFolder, name, isFile=True)
+
+        tempOutPath = dest + '.tmp'
+        shutil.move(dest, tempOutPath)
+
+        cmd = cls.modifyNodeCommand([
+            StaticFlowEnvironment.getNodeCommandAbsPath('uglifyjs'),
+            '"%s"' % tempOutPath,
+            '>',
+            '"%s"' % dest ])
+
+        result = SystemUtils.executeCommand(cmd)
+        os.remove(tempOutPath)
+        os.chdir(iniDirectory)
+        return result
+
 #___________________________________________________________________________________________________ compileCoffeescript
     @classmethod
     def compileCoffeescript(cls, processor, path):
-        iniDirectory = os.curdir
-        os.chdir(os.path.dirname(path))
-
-        coffeePath = FileUtils.createPath(
-            StaticFlowEnvironment.nodePackageManagerPath, 'coffee', isFile=True
-        )
-        uglifyPath = FileUtils.createPath(
-            StaticFlowEnvironment.nodePackageManagerPath, 'uglifyjs', isFile=True
-        )
-
         csPath  = FileUtils.cleanupPath(path, isFile=True)
         outPath = FileUtils.changePathRoot(
-            csPath[:-6] + 'js', processor.sourceWebRootPath, processor.targetWebRootPath
-        )
+            csPath[:-6] + 'js', processor.sourceWebRootPath, processor.targetWebRootPath)
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
-        result = SystemUtils.executeCommand(
-            '%s --output "%s" --compile "%s"' % (coffeePath, os.path.dirname(outPath), csPath)
-        )
+        outDir = os.path.dirname(outPath)
+        result = cls.compileCoffeescriptFile(csPath, outDir, minify=not processor.isLocal)
         if result['code']:
             processor.log.write(u'ERROR: [Failed to compile]: ' + unicode(path))
             print result
-            os.chdir(iniDirectory)
             return False
         else:
             processor.log.write(u'COMPILED [js]: ' + unicode(path))
@@ -136,22 +157,11 @@ class SiteProcessUtils(object):
         lastModified = FileUtils.getUTCModifiedDatetime(csPath)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
         if processor.isLocal:
-            os.chdir(iniDirectory)
             return True
-
-        tempOutPath = outPath + '.tmp'
-        shutil.move(outPath, tempOutPath)
-        result = SystemUtils.executeCommand(uglifyPath + ' ' + tempOutPath + ' > ' + outPath)
-        os.remove(tempOutPath)
-
-        if result['code']:
-            processor.log.write(u'ERROR [Failed to compress]: ' + unicode(outPath))
-            processor.log.write(unicode(result))
-            os.chdir(iniDirectory)
-            return False
 
         cls.copyToCdnFolder(outPath, processor, lastModified)
         processor.log.write(u'COMPRESSED [js]: ' + unicode(outPath))
+
         return True
 
 #___________________________________________________________________________________________________ compileCss
@@ -166,15 +176,15 @@ class SiteProcessUtils(object):
             shutil.copy(path, outPath)
             processor.log.write(u'COPIED [css]: ' + unicode(path))
         else:
+            cmd = cls.modifyNodeCommand([
+                FileUtils.createPath(
+                    StaticFlowEnvironment.nodePackageManagerPath, 'minify', isFile=True),
+                '"%s"' % path,
+                '"%s"' % outPath])
+
             iniDirectory = os.curdir
             os.chdir(os.path.dirname(path))
-            result = SystemUtils.executeCommand([
-                FileUtils.createPath(
-                    StaticFlowEnvironment.nodePackageManagerPath, 'minify', isFile=True
-                ),
-                path,
-                outPath
-            ])
+            result = SystemUtils.executeCommand(cmd)
             if result['code']:
                 processor.log.write(unicode(result['error']))
                 processor.log.write(u'ERROR [CSS compilation failure]: ' + unicode(path))
@@ -189,8 +199,7 @@ class SiteProcessUtils(object):
             return False
         FileUtils.putContents(
             cls._CSS_CDN_IMAGE_RE.sub('url(\g<quote>' + processor.cdnRootUrl + '/', source),
-            outPath
-        )
+            outPath)
 
         lastModified = FileUtils.getUTCModifiedDatetime(path)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
@@ -214,3 +223,15 @@ class SiteProcessUtils(object):
             return False
 
         return True
+
+#===================================================================================================
+#                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________
+    @classmethod
+    def modifyNodeCommand(cls, cmd):
+        if OsUtils.isMac():
+            return [
+                'export',
+                'PATH=%s:$PATH;' % StaticFlowEnvironment.nodePackageManagerPath] + cmd
+        return cmd

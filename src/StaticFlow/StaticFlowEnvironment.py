@@ -18,7 +18,7 @@ class StaticFlowEnvironment(object):
 
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
 
-    _templateRootOverridePath = None
+    _resourceRootOverridePath = None
 
 #___________________________________________________________________________________________________ GS: baseTime
     @ClassGetter
@@ -35,13 +35,23 @@ class StaticFlowEnvironment(object):
             return FileUtils.createPath(os.environ['APPDATA'], 'npm', isDir=True)
         return '/usr/local/bin/'
 
+#___________________________________________________________________________________________________ getNodeCommandAbsPath
+    @classmethod
+    def getNodeCommandAbsPath(cls, command):
+        return FileUtils.createPath(cls.nodePackageManagerPath, command, isFile=True)
+
+#___________________________________________________________________________________________________ GS: rootResourcePath
+    @ClassGetter
+    def rootResourcePath(cls):
+        if cls._resourceRootOverridePath is None:
+            return FileUtils.createPath(cls._ENV_PATH, '..', '..', 'resources')
+        return cls._resourceRootOverridePath
+
 #___________________________________________________________________________________________________ GS: rootTemplatePath
     @ClassGetter
     def rootTemplatePath(cls):
-        if cls._templateRootOverridePath is not None:
-            return cls._templateRootOverridePath
         return FileUtils.createPath(
-            cls._ENV_PATH, '..', '..', 'resources', 'apps', 'StaticFlow', 'templates', isDir=True)
+            cls.rootResourcePath, 'apps', 'StaticFlow', 'templates', isDir=True)
 
 #___________________________________________________________________________________________________ GS: rootPublicTemplatePath
     @ClassGetter
@@ -53,5 +63,5 @@ class StaticFlowEnvironment(object):
 
 #___________________________________________________________________________________________________ setTemplateRootPath
     @classmethod
-    def setTemplateRootPath(cls, path):
-        cls._templateRootOverridePath = FileUtils.cleanupPath(path, isDir=True)
+    def setResourceRootPath(cls, path):
+        cls._resourceRootOverridePath = FileUtils.cleanupPath(path, isDir=True)

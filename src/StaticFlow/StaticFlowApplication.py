@@ -44,9 +44,8 @@ class StaticFlowApplication(PyGlassApplication):
 
 #___________________________________________________________________________________________________  _runPreMainWindowImpl
     def _runPreMainWindowImpl(self):
-        templatePath = PyGlassEnvironment.getRootResourcePath(
-            'apps', self.appID, 'templates', isDir=True)
-        StaticFlowEnvironment.setTemplateRootPath(templatePath)
+        # Overrides the resource path for running StaticFlow applications within the PyGlass app
+        StaticFlowEnvironment.setResourceRootPath(PyGlassEnvironment.getRootResourcePath())
 
 ####################################################################################################
 ####################################################################################################
