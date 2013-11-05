@@ -13,7 +13,7 @@ class JumpTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'jump'
-    TEMPLATE       = 'markup/spanBase.mako'
+    TEMPLATE       = 'markup/anchorBase.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.TO[0]
@@ -32,15 +32,11 @@ class JumpTag(MarkupBlockTag):
 
 #___________________________________________________________________________________________________ _renderImpl
     def _renderImpl(self, **kwargs):
-        a      = self.attrs
+        a = self.attrs
 
         jumpID = a.get(
             TagAttributesEnum.TO + TagAttributesEnum.TARGET,
-            None
-        )
-
-        self._addColorToGroup(a.styleGroup)
+            None)
 
         if jumpID:
-            a.vdata.add('jid', jumpID, a.styleGroup)
-            a.classes.add(['v-S-lnk-h', 'v-hoverLink'], a.styleGroup)
+            a.attrs.add('href', '#' + jumpID)

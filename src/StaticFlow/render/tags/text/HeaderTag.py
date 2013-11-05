@@ -23,12 +23,10 @@ class HeaderTag(MarkupBlockTag):
     PRIMARY_ATTR   = TagAttributesEnum.LEVEL[0]
 
     _BACK_CAP = InsertCapPolicy(
-        InsertCapPolicy.BACK_TYPE, addExp=InsertCapPolicy.NEWLINE_BACK, addReplace=u'<br />'
-    )
+        InsertCapPolicy.BACK_TYPE, addExp=InsertCapPolicy.NEWLINE_BACK, addReplace=u'<br />')
 
     _AHEAD_CAP = InsertCapPolicy(
-        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD
-    )
+        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -66,15 +64,13 @@ class HeaderTag(MarkupBlockTag):
 
         level = a.getAsInt(
             TagAttributesEnum.LEVEL,
-            1
-        )
+            1)
 
         spacer = a.getAsEnumerated(
             TagAttributesEnum.SPACING,
             GeneralSizeEnum,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
 
         if not self._addColorToGroup(a.styleGroup):
             a.classes.add('v-S-hgh', a.styleGroup)

@@ -15,4 +15,4 @@ class ParagraphTag(MarkupBlockTag):
     TEMPLATE       = 'markup/paragraphBase.mako'
     BLOCK_DISPLAY  = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
-    NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES
+    NEWLINE_POLICY = MarkupBlockTag.STRIP_NEWLINES
