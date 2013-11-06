@@ -11,6 +11,7 @@ from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
 from pyaid.time.TimeUtils import TimeUtils
 
+from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.deploy.S3Bucket import S3Bucket
 
 #___________________________________________________________________________________________________ S3SiteDeployer
@@ -34,6 +35,7 @@ class S3SiteDeployer(object):
         self._sourceWebRootPath = FileUtils.cleanupPath(sourceWebRootPath, isDir=True)
         self._forceHtml         = forceHtml
         self._forceAll          = forceAll
+        self._cdnRootPath       = None
 
         self._settings = DictUtils.lowerDictKeys(
             DictUtils.lowerDictKeys(
@@ -59,7 +61,23 @@ class S3SiteDeployer(object):
 #___________________________________________________________________________________________________ deploy
     def deploy(self):
         """Doc..."""
-        os.path.walk(self._localRootPath, self._deployWalker, None)
+        if not os.path.exists(self._localRootPath):
+            return False
+
+        # Find the CDN root path if it exists
+        self._cdnRootPath = None
+        for item in os.listdir(self._localRootPath):
+            itemPath = FileUtils.createPath(self._localRootPath, item)
+            if item.startswith(StaticFlowEnvironment.CDN_ROOT_PREFIX) and os.path.isdir(itemPath):
+                self._cdnRootPath = FileUtils.cleanupPath(itemPath)
+                break
+
+        # Deploy CDN files first so they are available when the non-cdn files are deployed
+        if self._cdnRootPath:
+            os.path.walk(self._cdnRootPath, self._deployWalker, {'cdn':True})
+
+        # Walk the rest of the files not on the CDN root path
+        os.path.walk(self._localRootPath, self._deployWalker, {'cdn':False})
         return True
 
 #===================================================================================================
@@ -68,6 +86,11 @@ class S3SiteDeployer(object):
 #___________________________________________________________________________________________________ _deployWalker
     def _deployWalker(self, args, path, names):
         """Doc..."""
+
+        # Skip CDN file uploads when not walking the CDN root path explicitly
+        if not args['cdn'] and path.find(StaticFlowEnvironment.CDN_ROOT_PREFIX) != -1:
+            return
+
         for name in names:
             namePath = FileUtils.createPath(path, name)
             if os.path.isdir(namePath) or StringUtils.ends(name, self._SKIP_EXTENSIONS):

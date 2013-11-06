@@ -16,6 +16,8 @@ class StaticFlowEnvironment(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
+    CDN_ROOT_PREFIX = u'__cdn__'
+
     _ENV_PATH = FileUtils.getDirectoryOf(__file__)
 
     _resourceRootOverridePath = None

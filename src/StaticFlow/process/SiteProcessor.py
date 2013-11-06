@@ -75,7 +75,8 @@ class SiteProcessor(object):
         if self.isLocal:
             self._cdnRootFolder = u''
         else:
-            self._cdnRootFolder = u'__cdn__' + TimeUtils.getUtcTagTimestamp()
+            self._cdnRootFolder = StaticFlowEnvironment.CDN_ROOT_PREFIX \
+                                  + TimeUtils.getUtcTagTimestamp()
 
 #===================================================================================================
 #                                                                                   G E T / S E T
