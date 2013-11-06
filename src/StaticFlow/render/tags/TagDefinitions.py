@@ -4,6 +4,7 @@
 
 from StaticFlow.render.tags.box.BoxTag import BoxTag
 from StaticFlow.render.tags.box.BorderTag import BorderTag
+from StaticFlow.render.tags.box.FooterTag import FooterTag
 from StaticFlow.render.tags.box.SqueezeBoxTag import SqueezeBoxTag
 from StaticFlow.render.tags.definitions.GroupTag import GroupTag
 from StaticFlow.render.tags.definitions.MetaDataTag import MetaDataTag
@@ -63,6 +64,8 @@ class TagDefinitions(object):
     CSS             = CssTag
 
     DISQUS          = DisqusTag
+
+    FOOTER          = FooterTag
 
     FONT            = FontTag
 

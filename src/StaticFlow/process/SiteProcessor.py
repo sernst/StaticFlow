@@ -11,6 +11,7 @@ from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
+from pyaid.system.SystemUtils import SystemUtils
 from pyaid.time.TimeUtils import TimeUtils
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
@@ -49,19 +50,16 @@ class SiteProcessor(object):
 
         if isRemoteDeploy:
             self._targetWebRootPath = FileUtils.cleanupPath(
-                tempfile.mkdtemp(prefix='staticFlow_'), isDir=True
-            )
+                tempfile.mkdtemp(prefix='staticFlow_'), isDir=True)
         else:
             self._targetWebRootPath = None
 
         self._localWebRootPath  = FileUtils.createPath(
-            containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True
-        )
+            containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True)
 
         try:
             self._siteData = ConfigsDict(JSON.fromFile(
-                FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True)
-            ))
+                FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True) ))
         except Exception, err:
             self._siteData = dict()
 
@@ -198,13 +196,24 @@ class SiteProcessor(object):
         #       structure in the process
         os.path.walk(self.sourceWebRootPath, self._copyWalker, None)
 
-        #--- Loader.js ---#
-        source = FileUtils.createPath(
-            StaticFlowEnvironment.rootResourcePath, 'web', 'js', 'loader.js', isFile=True)
-        target = FileUtils.createPath(
-            self.targetWebRootPath, 'js', 'loader.js', isFile=True)
+        #--- COMMON FILES ---#
+        copies = [
+            ('web/js/loader.js', 'js/loader.js'),
+            ('web/js/engine.js', 'js/engine.js'),
+            ('web/css/engine.css', 'css/engine.css') ]
 
-        shutil.copy2(source, target)
+        for item in copies:
+            source = FileUtils.createPath(
+                StaticFlowEnvironment.rootResourcePath, *item[0].split('/'), isFile=True)
+            target = FileUtils.createPath(
+                self.targetWebRootPath, *item[1].split('/'), isFile=True)
+
+            targetFolder = os.path.dirname(target)
+            if not os.path.exists(targetFolder):
+                os.makedirs(targetFolder)
+
+            SystemUtils.copy(source, target)
+            SiteProcessUtils.copyToCdnFolder(target, self, FileUtils.getUTCModifiedDatetime(source))
 
         #-------------------------------------------------------------------------------------------
         # COMPILE
@@ -267,8 +276,7 @@ class SiteProcessor(object):
         # definition files before proceeding
         if '__folder__.def' in names:
             self._processFolderDefinitions(
-                FileUtils.createPath(path, '__folder__.def', isFile=True)
-            )
+                FileUtils.createPath(path, '__folder__.def', isFile=True))
             names = os.listdir(path)
 
         # For each definition file in the directory create page data for processing

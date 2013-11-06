@@ -33,8 +33,7 @@ class SiteProcessUtils(object):
 
         folder = targetPath[len(processor.targetWebRootPath):].replace('\\', '/').strip('/').split('/')
         destPath = FileUtils.createPath(
-            processor.targetWebRootPath, processor.cdnRootFolder, folder, isFile=True
-        )
+            processor.targetWebRootPath, processor.cdnRootFolder, folder, isFile=True)
         destFolder = FileUtils.getDirectoryOf(destPath)
         if not os.path.exists(destFolder):
             os.makedirs(destFolder)
@@ -112,7 +111,7 @@ class SiteProcessUtils(object):
 
         cmd = cls.modifyNodeCommand([
             StaticFlowEnvironment.getNodeCommandAbsPath('coffee'),
-            '--output', '"%s"' % destFolder,
+            '--output', '"%s"' % FileUtils.stripTail(destFolder),
             '--compile', '"%s"' % source ])
 
         result = SystemUtils.executeCommand(cmd)

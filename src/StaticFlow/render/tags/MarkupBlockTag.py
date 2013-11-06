@@ -31,8 +31,7 @@ class MarkupBlockTag(MarkupTag):
 
     _AHEAD_CAP = InsertCapPolicy(
         InsertCapPolicy.AHEAD_TYPE,
-        removeExp=InsertCapPolicy.NEWLINE_NO_TAG_AHEAD
-    )
+        removeExp=InsertCapPolicy.NEWLINE_NO_TAG_AHEAD)
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
@@ -234,10 +233,9 @@ class MarkupBlockTag(MarkupTag):
             self._offset = p.insertCharacters(
                 self.start(),
                 self.end(),
-                self._replacement,
+                self._replacement if self.isInsertsTag else u'',
                 self.backCapPolicy,
-                self.aheadCapPolicy
-            )
+                self.aheadCapPolicy)
 
         self.postRender(**kwargs)
 

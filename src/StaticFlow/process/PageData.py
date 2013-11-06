@@ -55,6 +55,13 @@ class PageData(object):
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: footerDom
+    @property
+    def footerDom(self):
+        if self._markupProcessor is None:
+            return u''
+        return self._markupProcessor.footerDom
+
 #___________________________________________________________________________________________________ GS: cssTags
     @property
     def cssTags(self):
@@ -255,7 +262,7 @@ class PageData(object):
             return defaultValue
 
         if len(items) == 1:
-            return items[0]
+            return DictUtils.clone(items[0])
 
         out = items.pop()
         while len(items):
@@ -362,8 +369,7 @@ class PageData(object):
                 uid.append(uidPrefix)
 
             uid.append(TimeUtils.datetimeToTimecode(
-                datetime.datetime.utcnow(), StaticFlowEnvironment.baseTime
-            ))
+                datetime.datetime.utcnow(), StaticFlowEnvironment.baseTime))
 
             pathParts = self.sourceFolder
             pathParts.append(self.filename)
@@ -380,12 +386,17 @@ class PageData(object):
         self._pageVars['CDN_ROOT'] = self.processor.cdnRootFolder
         self._pageVars['CDN_URL']  = self.processor.cdnRootUrl
 
-        out = []
+        out = [
+            self._formatPageVarInclude([
+                'jquery',
+                 '/js/ext/jquery/jquery.js',
+                 '//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js' ]),
+            self._formatPageVarInclude(['staticFlow', '/js/engine.js']) ]
         for item in self._pageVars['SCRIPTS']:
             out.append(self._formatPageVarInclude(item))
         self._pageVars['SCRIPTS'] = out
 
-        out = []
+        out = [self._formatPageVarInclude(['css-staticFlow', '/css/engine.css'])]
         for item in self._pageVars['CSS']:
             out.append(self._formatPageVarInclude(item))
         self._pageVars['CSS'] = out
@@ -438,8 +449,7 @@ class PageData(object):
         return datetime.datetime(
             year=int(value[-1]),
             month=int(value[0]),
-            day=int(value[1])
-        )
+            day=int(value[1]) )
 
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self):

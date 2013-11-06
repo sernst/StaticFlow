@@ -27,36 +27,13 @@ if not Function.prototype.bind
 # STATIC FLOW BEACH HEAD
 #       Creates temporary global SFlow access point.
 sflow = {
+    mod:{},
+    r:{},
     _events:{},
     _eventCBs:{},
-    SCRIPTS:false
+    CREATED:false
 }
 window.SFLOW = sflow
-
-#___________________________________________________________________________________________________ resize
-sflow.resize = (dom) ->
-    dom = if dom then $(dom) else $('body')
-    window.SFLOW.dispatchEvent({id:'DOM:resize', data:dom})
-
-#___________________________________________________________________________________________________ refresh
-sflow.refresh = (dom) ->
-    dom = if dom then $(dom) else $('body')
-
-    # Force Zurb foundation elements to resize in the new DOM once initialized
-    dom.find('.columns').resize()
-
-    # Lazy load images
-    dom.find('img[data-src!=""]').each((index, element) ->
-        e   = $(element)
-        src = e.attr('data-src')
-        if src and src.length > 0 and src.substr(1, 1) != '/'
-            src = PAGE.CDN_URL + src
-        e.attr('data-src', null)
-        e.attr('src', src)
-    )
-
-    window.SFLOW.resize(dom)
-    return
 
 #___________________________________________________________________________________________________ addEventListener
 sflow.addEventListener = (id, cb, d) ->
@@ -71,13 +48,13 @@ sflow.addEventListener = (id, cb, d) ->
         @@@param data:mixed
             Any data to be passed to the callback function when called by the event.
     ###
-    v = window.SFLOW
+    sf = window.SFLOW
 
-    if v._events[id]
-        cb(v._events[id], d)
+    if sf._events[id]
+        cb(sf._events[id], d)
         return
 
-    e      = v._eventCBs
+    e      = sf._eventCBs
     e[id] ?= []
 
     # Do not add callbacks more than once
@@ -116,7 +93,7 @@ sflow.dispatchEvent = (e) ->
     ### Dispatches an event. The event can either be a string object or an event object with an id
         atttribute.
     ###
-    v = window.SFLOW
+    sf = window.SFLOW
 
     try
         id = e.id
@@ -125,9 +102,9 @@ sflow.dispatchEvent = (e) ->
         e  = {id:e}
 
     if e.oneShot
-        v._events[id] = e
+        sf._events[id] = e
 
-    cb = v._eventCBs
+    cb = sf._eventCBs
     if not cb[id]
         return false
 
@@ -171,33 +148,8 @@ window.onload = () ->
     #   Executed when all script loading completed. Triggers the loading of the independent, i.e.
     #   truly asynchronous scripts, if any exist.
     complete = () ->
-        # Intialize the Zurb Foundation framework
-        $('#mainContainer').show()
-        $('#loadBox').remove()
-
-        SFLOW.SCRIPTS = true
-        SFLOW.dispatchEvent({id:'SCRIPT:complete', oneShot:true})
-
-        if PAGE.ASYNC.length
-            loadItems(PAGE.ASYNC)
-
-        if dyn
-            SFLOW.addEventListener('DOM:dynamic', (event) ->
-                SFLOW.populateDom(event.data)
-            )
-        SFLOW.dispatchEvent({id:'DOM:complete', oneShot:true})
-        $(document).foundation()
-
-        $(window).resize(() ->
-            SFLOW.dispatchEvent({id:'DOM:resize', data:$('body')})
-        )
-
-        SFLOW.dispatchEvent({id:'LOAD:complete', oneShot:true})
-        SFLOW.refresh()
-
-        if location.hash.length > 1
-            SFLOW.dispatchEvent({id:'PAGE:hashChange', data:location.hash})
-
+        new SFLOW.class()
+        SFLOW.loadComplete()
         return
 
     #-----------------------------------------------------------------------------------------------

@@ -13,10 +13,11 @@
     % endif
 
     <title>${mr.pageData.get('title') | n}</title>
+    <meta name="description" content="${mr.pageData.get('description') | n}" />
     <meta property="og:title" content="${mr.pageProcessor.siteData.get('TITLE')}" />
     <meta property="og:url" content="${mr.pageData.targetUrl}" />
     <meta property="og:image" content="${mr.pageProcessor.cdnRootUrl + mr.pageData.get('THUMBNAIL')}" />
-    <meta name="description" content="${mr.pageData.get('description') | n}" />
+    <meta property="og:description" content="${mr.pageData.get('description') | n}"/>
     <script>
         window.PAGE=${mr.pageVars | n};
     </script>
@@ -36,6 +37,10 @@
 </head>
 
 <body>
+<div id="sf_wrapper">
 ${next.body() | n}
+<div id="sf_footer_push"></div>
+</div>
+<div id="sf_footer" style="display:none;">${mr.pageData.footerDom | n}</div>
 </body>
 </html>

@@ -47,6 +47,8 @@ class TagAttributesEnum(object):
 
     CLEAR           = ['clear']
 
+    CODE            = ['code']
+
     COLLECTION      = ['collect', 'collection']
 
     COLOR           = ['color', 'c']

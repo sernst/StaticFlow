@@ -1,5 +1,7 @@
 .idea
 *.pyc
+*.ics
+*.ccs
 /bin/installer.nsi
 /bin/setup.log
 /bin/setup.py

@@ -50,7 +50,8 @@ class YouTubeTag(MarkupTag):
     @classmethod
     def getAttributeList(cls):
         t = TagAttributesEnum
-        return MarkupTag.getAttributeList() + t.URL + t.AUTO_PLAY + t.START + t.TIME + t.ASPECT_RATIO
+        return MarkupTag.getAttributeList() + t.URL + t.AUTO_PLAY + t.START + t.TIME \
+               + t.ASPECT_RATIO + t.CODE
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -84,7 +85,8 @@ class YouTubeTag(MarkupTag):
         start = a.get(TagAttributesEnum.START + TagAttributesEnum.TIME, None, kwargs)
 
         # Getting the url in the same, raw fashion as the start property.
-        url = a.get(TagAttributesEnum.URL, None, kwargs)
+        url  = a.get(TagAttributesEnum.URL, None, kwargs)
+        code = a.get(TagAttributesEnum.CODE, None, kwargs)
 
         # Here play is a boolean value so getAsBool is used instead of get, which converts the value
         # from a string into a boolean where 'true', 'yes', 'on', and '1' all equate to True and
@@ -114,8 +116,8 @@ class YouTubeTag(MarkupTag):
         # if this enumerated access fails, it means the value is likely a float. We don't want to
         # log the error, instead we want to try to access the attribute as a float instead as is
         # done below.
-        aspect = a.getAsEnumerated(TagAttributesEnum.ASPECT_RATIO, AspectRatioEnum, None,
-                                   kwargs, allowFailure=True)
+        aspect = a.getAsEnumerated(
+            TagAttributesEnum.ASPECT_RATIO, AspectRatioEnum, None, kwargs, allowFailure=True)
 
         # Here if the aspect ratio is None the aspect ratio should be accessed as a float value.
         # Now this case doesn't allow failure since it is the last attempt to access the attribute.
@@ -154,7 +156,7 @@ class YouTubeTag(MarkupTag):
 
                 a.render['code'] = u''
         else:
-            a.render['code'] = YouTubeTag._DEFAULT_CODE
+            a.render['code'] = YouTubeTag._DEFAULT_CODE if code is None else code
 
             if self._processor.privateView:
                 MarkupTagError(tag=self, code='missing-url-attribute').log()
@@ -192,11 +194,11 @@ class YouTubeTag(MarkupTag):
         if not aspect:
             aspect = AspectRatioEnum.WIDESCREEN[0]
 
-        a.settings.add('aspect', aspect if aspect else AspectRatioEnum.WIDESCREEN[0], 'player')
+        a.data.add('aspect', aspect if aspect else AspectRatioEnum.WIDESCREEN[0], 'player')
 
         # The a.classes is a list, organizer, where you specify the value to add to the list for
         # specific group.
-        a.classes.add('v-vmlAspect', 'player')
+        a.classes.add('sfml-aspect', 'player')
 
         # a.styles is another dict-like DOM group organizer, with key value pairs being assigned
         # to a particular group.

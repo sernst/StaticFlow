@@ -2,11 +2,13 @@
 # (C)2013
 # Scott Ernst
 
+import os
 import sys
 import getopt
 
 from pyaid.file.FileUtils import FileUtils
 from pyaid.system.SystemUtils import SystemUtils
+from pyaid.web.coffeescript.CoffeescriptBuilder import CoffeescriptBuilder
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
@@ -29,10 +31,41 @@ class WebResourcePackager(object):
 #___________________________________________________________________________________________________ run
     def run(self):
         """Doc..."""
-        self._createLoaderJs()
+        if not self._createEngineJs():
+            return False
+
+        if not self._createLoaderJs():
+            return False
+
+        if not self._createEngineCss():
+            return False
+
+        return True
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _createEngineJs
+    def _createEngineJs(self):
+        cb = CoffeescriptBuilder(
+            'sflow.api.SFlowApi-exec',
+            FileUtils.createPath(StaticFlowEnvironment.rootResourcePath, '..', 'js', isDir=True),
+            buildOnly=True)
+        target = cb.construct()[0]
+
+        targetFolder = FileUtils.createPath(
+                StaticFlowEnvironment.rootResourcePath, 'web', 'js', isDir=True)
+
+        result = SiteProcessUtils.compileCoffeescriptFile(target.assembledPath, targetFolder)
+        if result['code']:
+            print 'ERROR: Failed compilation of the Static Flow engine'
+            print result
+            return False
+
+        sourcePath = FileUtils.createPath(targetFolder, target.name + '.js', isFile=True)
+        destPath   = FileUtils.createPath(targetFolder, 'engine.js', isFile=True)
+        SystemUtils.move(sourcePath, destPath)
+        return True
 
 #___________________________________________________________________________________________________ _createLoaderJs
     def _createLoaderJs(self):
@@ -49,6 +82,40 @@ class WebResourcePackager(object):
 
         print 'COMPILED: loader.js'
         return True
+
+#___________________________________________________________________________________________________ _createEngineCss
+    def _createEngineCss(self):
+        resourcePath = StaticFlowEnvironment.rootResourcePath
+        sourceFolder = FileUtils.createPath(resourcePath, '..', 'css', isDir=True)
+        targetFolder = FileUtils.createPath(resourcePath, 'web', 'css', isDir=True)
+
+        tempPath = FileUtils.createPath(targetFolder, 'engine.temp.css', isFile=True)
+        SystemUtils.remove(tempPath)
+        destF = open(tempPath, 'a')
+
+        for item in FileUtils.getFilesOnPath(sourceFolder):
+            try:
+                f = open(item, 'r')
+                destF.write('\n' + f.read())
+                f.close()
+            except Exception , err:
+                print 'ERROR: Failed to read CSS file:', item
+
+        destF.close()
+        targetPath = FileUtils.createPath(targetFolder, 'engine.css', isFile=True)
+        cmd = SiteProcessUtils.modifyNodeCommand([
+            StaticFlowEnvironment.getNodeCommandAbsPath('minify'),
+            '"%s"' % tempPath,
+            '"%s"' % targetPath ])
+        result = SystemUtils.executeCommand(cmd)
+        SystemUtils.remove(tempPath)
+        if result['code']:
+            print 'ERROR: Failed to build CSS engine file at:', targetPath
+            return False
+
+        print 'ASSEMBLED: engine.css'
+        return True
+
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

@@ -52,6 +52,7 @@ class MarkupTag(object):
         self._attrsReady      = False
         self._voidTag         = ArgsUtils.get('void', None, kwargs)
         self._leafTag         = ArgsUtils.get('leaf', None, kwargs)
+        self._isInsertsTag    = ArgsUtils.get('inserts', None, kwargs)
         self._passthruTag     = ArgsUtils.get('passthru', None, kwargs)
         self._renderOverride  = ArgsUtils.get('renderOverride', None, kwargs)
         self._renderTemplate  = ArgsUtils.get('renderTemplate', None, kwargs)
@@ -154,6 +155,15 @@ class MarkupTag(object):
             return self.getClassAttr('PASSTHRU_TAG', False)
 
         return self._passthruTag
+
+#___________________________________________________________________________________________________ GS: isInsertsTag
+    @property
+    def isInsertsTag(self):
+
+        if self._isInsertsTag is None:
+            return self.getClassAttr('INSERTS_TAG', True)
+
+        return self._isInsertsTag
 
 #___________________________________________________________________________________________________ GS: tagName
     @property
@@ -318,10 +328,9 @@ class MarkupTag(object):
             self._offset = p.insertCharacters(
                 self.start(),
                 self.end(),
-                self._replacement,
+                self._replacement if self.isInsertsTag else u'',
                 self.backCapPolicy,
-                self.aheadCapPolicy
-            )
+                self.aheadCapPolicy)
 
         self.postRender(**kwargs)
 

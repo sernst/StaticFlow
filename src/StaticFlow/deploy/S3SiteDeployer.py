@@ -94,15 +94,13 @@ class S3SiteDeployer(object):
                 eTag=headers.get('eTag', None),
                 expires=headers.get('Expires'),
                 newerThanDate=lastModified,
-                policy=S3Bucket.PUBLIC_READ
-            )
+                policy=S3Bucket.PUBLIC_READ)
 
             if StringUtils.ends(name, self._STRING_EXTENSIONS):
                 result = self._bucket.put(
                     contents=FileUtils.getContents(namePath),
                     zipContents=True,
-                    **kwargs
-                )
+                    **kwargs)
             else:
                 result = self._bucket.putFile(filename=namePath, **kwargs)
 

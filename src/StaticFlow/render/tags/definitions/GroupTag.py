@@ -21,12 +21,10 @@ class GroupTag(MarkupTag):
     VOID_TAG      = True
 
     BACK_CAP_POLICY = InsertCapPolicy(
-        InsertCapPolicy.BACK_TYPE, removeExp=InsertCapPolicy.NEWLINE_BACK
-    )
+        InsertCapPolicy.BACK_TYPE, removeExp=InsertCapPolicy.NEWLINE_BACK)
 
     AHEAD_CAP_POLICY = InsertCapPolicy(
-        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD
-    )
+        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD)
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
@@ -36,8 +34,7 @@ class GroupTag(MarkupTag):
 
         groupName = a.get(
             TagAttributesEnum.GROUP,
-            None
-        )
+            None)
 
         if groupName is None:
             MarkupTagError(tag=self).log() #TODO

@@ -57,6 +57,7 @@ class MarkupProcessor(TextAnalyzer):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, source, **kwargs):
 
+        self.footerDom     = u''
         self.pageData      = ArgsUtils.get('pageData', None, kwargs)
         self.pageProcessor = ArgsUtils.get('pageProcessor', None, kwargs)
 
@@ -99,6 +100,8 @@ class MarkupProcessor(TextAnalyzer):
         self._autoTitle         = u''
         self._autoDescription   = u''
         self._allowModelCaching = False
+
+        self.privateView = False
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -172,7 +175,7 @@ class MarkupProcessor(TextAnalyzer):
     @property
     def cssStyles(self):
         if self._css:
-            return u'\n'.join(self._css)
+            return u'<style>\n' + u'\n'.join(self._css) + u'\n</style>'
         return None
 
 #___________________________________________________________________________________________________ GS: autoTitle

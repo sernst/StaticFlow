@@ -65,7 +65,7 @@ class CssTag(MarkupBlockTag):
             TagAttributesEnum.MINIFY + TagAttributesEnum.MINIMIZE + TagAttributesEnum.SHRINK,
             self._minify)
 
-        self._content = u'<style>\n%s\n</style>' % a.content
+        self._content = a.content
         self._processor.addCSSStyles(self._content)
 
         MarkupBlockTag._renderImpl(self, **kwargs)
