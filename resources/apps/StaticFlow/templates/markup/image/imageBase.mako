@@ -4,4 +4,4 @@
 
 <%inherit file="../divBase.mako" />
 
-<%block name="tagBodyBlock"><img ${mr.data.write('image') | n} /></%block>
+<%block name="tagBodyBlock"><div ${mr.data.write('imageBox') | n}><img ${mr.data.write('image') | n} /></div></%block>

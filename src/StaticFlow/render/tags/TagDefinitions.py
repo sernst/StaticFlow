@@ -26,6 +26,9 @@ from StaticFlow.render.tags.layout.HangerTag import HangerTag
 from StaticFlow.render.tags.layout.LineTag import LineTag
 from StaticFlow.render.tags.layout.RowTag import RowTag
 from StaticFlow.render.tags.layout.SpacerTag import SpacerTag
+from StaticFlow.render.tags.layout.ZurbBoxTag import ZurbBoxTag
+from StaticFlow.render.tags.layout.ZurbRowTag import ZurbRowTag
+from StaticFlow.render.tags.layout.ZurbChunkTag import ZurbChunkTag
 from StaticFlow.render.tags.navigation.JumpTag import JumpTag
 from StaticFlow.render.tags.style.BoldTag import BoldTag
 from StaticFlow.render.tags.style.ColorTag import ColorTag
@@ -132,3 +135,9 @@ class TagDefinitions(object):
     VIMEO           = VimeoTag
 
     YOUTUBE         = YouTubeTag
+
+    ZURBBOX         = ZurbBoxTag
+
+    ZURBROW         = ZurbRowTag
+
+    ZURBCHUNK       = ZurbChunkTag

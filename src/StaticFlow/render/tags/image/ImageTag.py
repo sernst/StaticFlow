@@ -47,44 +47,37 @@ class ImageTag(MarkupTag):
         align = a.getAsEnumerated(
             TagAttributesEnum.ALIGNMENT,
             AlignmentEnum,
-            AlignmentEnum.CENTER
-        )
+            AlignmentEnum.CENTER)
 
         wide = a.getAsUnit(
             TagAttributesEnum.WIDTH,
             640,
             defaultUnit='px',
-            unitType=int
-        )
+            unitType=int)
 
         tall = a.getAsUnit(
             TagAttributesEnum.HEIGHT,
             360,
             defaultUnit='px',
-            unitType=int
-        )
+            unitType=int)
 
         url, urlKeyData = a.get(
             TagAttributesEnum.URL,
             None,
-            returnKey=True
-        )
+            returnKey=True)
 
         link = a.getAsBool(
             TagAttributesEnum.LINKED,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
 
         target = a.getAsKeyword(
             TagAttributesEnum.TARGET + TagAttributesEnum.WINDOW_TARGET,
-            None
-        )
+            None)
 
         fixed = a.getAsBool(
             TagAttributesEnum.FIXED,
-            False
-        )
+            False)
 
         if link is None:
             link = a.getAsURL(TagAttributesEnum.LINKED, None)
@@ -98,19 +91,19 @@ class ImageTag(MarkupTag):
                 attributeGroup=TagAttributesEnum.URL
             ).log()
 
-        wide = wide.value
-        tall = tall.value
+        w = wide.value
+        h = tall.value
 
         if fixed:
-            a.styles.add({'width':unicode(wide) + 'px', 'height':unicode(tall) + 'px'})
+            a.styles.add({'width':unicode(w) + 'px', 'height':unicode(h) + 'px'})
             a.settings.add('fixed', 1)
         else:
+            a.styles.add({'max-width':unicode(w) + 'px', 'max-height':unicode(h) + 'px'}, 'imageBox')
             a.data.add({'width':unicode(wide), 'height':unicode(tall)})
 
         a.data.add('src', url, 'image')
-        a.classes.add('v-lazyImage', 'image')
-        a.attrs.add('width', '100%', 'image')
-        a.attrs.add('height', '100%', 'image')
+        a.classes.add('sfml-lazyImage', 'image')
+        a.classes.add('sfml-imageBox', 'imageBox')
 
         if target is None:
             target = '_blank'
@@ -136,6 +129,17 @@ class ImageTag(MarkupTag):
         #-------------------------------------------------------------------------------------------
         # ALIGNMENT
         if align == 'r':
-            a.styles.add('text-align', 'right')
+            a.styles.add({
+                    'text-align':'right',
+                    'margin:':'auto 0 auto auto'},
+                'imageBox')
         elif align == 'l':
-            a.styles.add('text-align', 'left')
+            a.styles.add({
+                    'text-align':'left',
+                    'margin':'auto auto 0 auto'},
+                'imageBox')
+        else:
+            a.styles.add({
+                    'text-align':'center',
+                    'margin':'auto'},
+                'imageBox')

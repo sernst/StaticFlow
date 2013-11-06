@@ -43,6 +43,8 @@ class TagAttributesEnum(object):
 
     BOX             = ['box']
 
+    CENTER          = ['center']
+
     CHECKED         = ['chk', 'check', 'checked']
 
     CLEAR           = ['clear']
@@ -106,6 +108,8 @@ class TagAttributesEnum(object):
     ITALIC          = ['italic']
 
     LABEL           = ['label']
+
+    LARGE           = ['large']
 
     LANGUAGE        = ['language', 'lang', 'l']
 
@@ -186,6 +190,8 @@ class TagAttributesEnum(object):
     SIZE            = ['size']
 
     SKINNY          = ['skinny', 'thin']
+
+    SMALL           = ['small']
 
     SPACING         = ['gap', 'spacing', 'spacer']
 

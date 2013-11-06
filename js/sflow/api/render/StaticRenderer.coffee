@@ -5,6 +5,8 @@
 # require sflow.api.enum.AttrEnum
 # require sflow.util.Types
 # require sflow.util.dom.DOMUtils
+# require sflow.util.ArrayUtils
+# require sflow.util.time.DataTimer
 
 class StaticRenderer
 
