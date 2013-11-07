@@ -18,19 +18,16 @@ class MetaDataTag(MarkupTag):
     VOID_TAG      = True
 
     BACK_CAP_POLICY = InsertCapPolicy(
-        InsertCapPolicy.BACK_TYPE, removeExp=InsertCapPolicy.NEWLINE_BACK
-    )
+        InsertCapPolicy.BACK_TYPE, removeExp=InsertCapPolicy.NEWLINE_BACK)
 
     AHEAD_CAP_POLICY = InsertCapPolicy(
-        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD
-    )
+        InsertCapPolicy.AHEAD_TYPE, removeExp=InsertCapPolicy.NEWLINE_AHEAD)
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, *args, **kwargs):
         MarkupTag.__init__(self, *args, **kwargs)
         self._processor.metadata = dict(
-            self._processor.metadata.items() + self.attrs.attributeDict.items()
-        )
+            self._processor.metadata.items() + self.attrs.attributeDict.items())
 
 #===================================================================================================
 #                                                                                     P U B L I C

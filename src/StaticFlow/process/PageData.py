@@ -55,6 +55,19 @@ class PageData(object):
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: title
+    @property
+    def title(self):
+        return self.get('title')
+
+#___________________________________________________________________________________________________ GS: description
+    @property
+    def description(self):
+        s = self.get('summary')
+        if s:
+            return s
+        return self.siteData.get('description')
+
 #___________________________________________________________________________________________________ GS: footerDom
     @property
     def footerDom(self):

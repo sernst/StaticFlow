@@ -60,10 +60,21 @@ class RssFileGenerator(object):
             return self._pageData.get('DESCRIPTION', u'')
         return out
 
+#___________________________________________________________________________________________________ GS: thumbnail
+    @property
+    def thumbnail(self):
+        return self._processor.getSiteUrl(
+            self._pageData.get('THUMBNAIL', u''), forceHttp=True, forceDeploy=True)
+
 #___________________________________________________________________________________________________ GS: homeUrl
     @property
     def homeUrl(self):
         return self._pageData.targetUrl
+
+#___________________________________________________________________________________________________ GS: rssUrl
+    @property
+    def rssUrl(self):
+        return self.homeUrl + 'rss.xml'
 
 #___________________________________________________________________________________________________ GS: entries
     @property
@@ -74,8 +85,7 @@ class RssFileGenerator(object):
     @property
     def targetPath(self):
         return FileUtils.createPath(
-            FileUtils.getDirectoryOf(self._pageData.targetPath), 'rss.xml', isFile=True
-        )
+            FileUtils.getDirectoryOf(self._pageData.targetPath), 'rss.xml', isFile=True)
 
 #___________________________________________________________________________________________________ GS: compiledTimestamp
     @property
@@ -118,14 +128,6 @@ class RssFileGenerator(object):
             return False
 
         return FileUtils.putContents(result, self.targetPath)
-
-#===================================================================================================
-#                                                                               P R O T E C T E D
-
-#___________________________________________________________________________________________________ _internalMethod
-    def _internalMethod(self):
-        """Doc..."""
-        pass
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

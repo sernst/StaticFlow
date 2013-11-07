@@ -166,8 +166,37 @@ class SiteProcessor(object):
             return u''
         return u'//' + domain + u'/' + self.cdnRootFolder
 
+#___________________________________________________________________________________________________ GS: siteRootUrl
+    @property
+    def siteRootUrl(self):
+        if self.isLocal:
+            return u''
+        domain = self.siteData.get('DOMAIN')
+        if not domain:
+            return u''
+        return u'//' + domain
+
 #===================================================================================================
 #                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ getSiteUrl
+    def getSiteUrl(self, uriPath, forceHttp =False, forceHttps =False, forceDeploy =False):
+        if self.isLocal and not forceDeploy:
+            return uriPath
+
+        domain = self.siteData.get('DOMAIN')
+        if not domain:
+            return uriPath
+
+        protocol = u'//'
+        if forceHttps:
+            protocol = u'https://'
+        elif forceHttp:
+            protocol = u'http://'
+
+
+        sep = u'' if uriPath.startswith(u'/') else u'/'
+        return protocol + domain + sep + uriPath
 
 #___________________________________________________________________________________________________ run
     def run(self):

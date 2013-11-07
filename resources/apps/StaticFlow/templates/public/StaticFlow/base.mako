@@ -8,16 +8,18 @@
         <link rel="alternate"
               type="application/rss+xml"
               title="${mr.pageData.rssGenerator.title}"
-              href="${mr.pageData.rssGenerator.homeUrl}"
+              href="${mr.pageData.rssGenerator.rssUrl}"
         />
     % endif
 
-    <title>${mr.pageData.get('title') | n}</title>
-    <meta name="description" content="${mr.pageData.get('description') | n}" />
-    <meta property="og:title" content="${mr.pageProcessor.siteData.get('TITLE')}" />
+    <title>${mr.pageData.title}</title>
+    <meta name="description" content="${mr.pageData.description | n}" />
+    <meta property="og:title" content="${mr.pageData.title}" />
     <meta property="og:url" content="${mr.pageData.targetUrl}" />
-    <meta property="og:image" content="${mr.pageProcessor.cdnRootUrl + mr.pageData.get('THUMBNAIL')}" />
-    <meta property="og:description" content="${mr.pageData.get('description') | n}"/>
+    <meta property="og:image" content="${mr.pageProcessor.getSiteUrl(mr.pageData.get('THUMBNAIL'), forceHttp=True)}" />
+    <meta property="og:description" content="${mr.pageData.description}"/>
+    <meta property="og:site_name" content="${mr.pageProcessor.siteData.get('TITLE')}"/>
+    <meta property="og:type" content="${mr.pageData.get('TYPE', 'website')}"/>
     <script>
         window.PAGE=${mr.pageVars | n};
     </script>
