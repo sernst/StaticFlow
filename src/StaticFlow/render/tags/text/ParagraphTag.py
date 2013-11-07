@@ -3,9 +3,10 @@
 # Scott Ernst
 
 from StaticFlow.render.tags.MarkupBlockTag import MarkupBlockTag
+from StaticFlow.render.tags.style.FontTag import FontTag
 
 #___________________________________________________________________________________________________ ParagraphTag
-class ParagraphTag(MarkupBlockTag):
+class ParagraphTag(FontTag):
     """A class for..."""
 
 #===================================================================================================

@@ -112,6 +112,11 @@ class SiteProcessor(object):
             return self._targetWebRootPath is None
         return bool(self._isLocal)
 
+#___________________________________________________________________________________________________ GS: snippetsPath
+    @property
+    def snippetsPath(self):
+        return FileUtils.createPath(self._containerPath, 'snippets', isDir=True)
+
 #___________________________________________________________________________________________________ GS: htmlTemplatePath
     @property
     def htmlTemplatePath(self):

@@ -2,9 +2,11 @@
 # (C)2011-2013
 # Scott Ernst
 
+import os
 import re
 
 from pyaid.ArgsUtils import ArgsUtils
+from pyaid.file.FileUtils import FileUtils
 from pyaid.string.StringUtils import StringUtils
 from pyaid.text.BlockDefinition import BlockDefinition
 from pyaid.text.BlockSyntaxEnum import BlockSyntaxEnum
@@ -54,6 +56,8 @@ class MarkupProcessor(TextAnalyzer):
         '(<br />[\s\t\n]*((?=<div)|(?=<script)))|(((?<=</div>)|(?<=</script>))[\s\t\n]*<br />)'
     )
 
+    _SNIPPET_PATTERN = re.compile('\[#snippet[\s\t\n]+(?P<path>[^\]]+)\]')
+
 #___________________________________________________________________________________________________ __init__
     def __init__(self, source, **kwargs):
 
@@ -66,13 +70,10 @@ class MarkupProcessor(TextAnalyzer):
             'root':[
                 MarkupTextBlockUtils.createMarkupCommentDef(BlockDefinition.BLOCKED),
                 MarkupTextBlockUtils.createMarkupOpenDef('quote'),
-                MarkupTextBlockUtils.createMarkupCloseDef(BlockDefinition.BLOCKED)
-            ],
+                MarkupTextBlockUtils.createMarkupCloseDef(BlockDefinition.BLOCKED) ],
             'quote':[
                 BlockDefinition.createQuoteDef(BlockDefinition.BLOCKED),
-                BlockDefinition.createLiteralDef(BlockDefinition.BLOCKED)
-            ]
-        }
+                BlockDefinition.createLiteralDef(BlockDefinition.BLOCKED) ]}
 
         self._renderErrors = []
         self._tagIndex     = -1
@@ -323,6 +324,30 @@ class MarkupProcessor(TextAnalyzer):
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _preAnalyzeImpl
+    def _preAnalyzeImpl(self):
+        while True:
+            result = self._SNIPPET_PATTERN.search(self._raw)
+            if not result:
+                break
+
+            path = FileUtils.createPath(
+                self.pageProcessor.snippetsPath, result.group('path').strip(), isFile=True)
+            if not os.path.exists(path):
+                self._raw = self._raw[:result.start()] + self._raw[result.end():]
+                continue
+
+            try:
+                f = open(path, 'r')
+                contents = f.read()
+                f.close()
+                self._raw = self._raw[:result.start()] + contents + self._raw[result.end():]
+            except Exception, err:
+                self._raw = self._raw[:result.start()] + self._raw[result.end():]
+                continue
+
+        super(MarkupProcessor, self)._preAnalyzeImpl()
 
 #___________________________________________________________________________________________________ _traceTagInHierarchy
     @classmethod

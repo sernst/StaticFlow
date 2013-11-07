@@ -2,8 +2,6 @@
 # (C)2012-2013
 # Scott Ernst
 
-import math
-
 from StaticFlow.render.enum.GeneralSizeEnum import GeneralSizeEnum
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.tags.box.BoxTag import BoxTag
@@ -18,6 +16,7 @@ class ZurbChunkTag(BoxTag):
 
     TAG          = 'zurbchunk'
     TEMPLATE     = 'markup/layout/zurbChunk.mako'
+    PRIMARY_ATTR = TagAttributesEnum.SIZE
 
 #===================================================================================================
 #                                                                                     P U B L I C

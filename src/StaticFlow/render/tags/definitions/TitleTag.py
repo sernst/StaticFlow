@@ -3,6 +3,7 @@
 # Scott Ernst
 
 from StaticFlow.render.tags.MarkupBlockTag import MarkupBlockTag
+from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 
 #___________________________________________________________________________________________________ TitleTag
 class TitleTag(MarkupBlockTag):
@@ -23,11 +24,18 @@ class TitleTag(MarkupBlockTag):
 #___________________________________________________________________________________________________ getAttributeList
     @classmethod
     def getAttributeList(cls):
-        return None
+        return TagAttributesEnum.LEVEL
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
 
 #___________________________________________________________________________________________________ _renderImpl
     def _renderImpl(self, **kwargs):
+        a = self.attrs
+
+        self.attrs.render['level'] = str(a.getAsInt(
+            TagAttributesEnum.LEVEL,
+            1, kwargs))
+
         self._processor.metadata['title'] = self.attrs.content
+

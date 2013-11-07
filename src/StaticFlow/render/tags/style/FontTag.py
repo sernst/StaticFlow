@@ -181,13 +181,13 @@ class FontTag(MarkupBlockTag):
 
         if isinstance(bold, bool):
             if bold:
-                a.classes.add('v-gvml-b', a.styleGroup)
+                a.classes.add('sfml-b', a.styleGroup)
             else:
                 a.styles.add('font-weight', 'normal', a.styleGroup)
 
         if isinstance(italic, bool):
             if bold:
-                a.classes.add('v-gvml-i', a.styleGroup)
+                a.classes.add('sfml-i', a.styleGroup)
             else:
                 a.styles.add('font-style', 'normal', a.styleGroup)
 

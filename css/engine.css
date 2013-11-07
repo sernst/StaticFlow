@@ -2,3 +2,7 @@
 html, body {height: 100%; margin:0;}
 #sf_wrapper {min-height: 100%; height: auto !important; height: 100%; margin: 0 auto auto;}
 #sf_footer, #sf_push {clear: both;}
+
+/* SFML Markup */
+sfml-b { font-weight:bold; }
+sfml-i { font-style: italic; }

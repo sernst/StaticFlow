@@ -48,32 +48,27 @@ class LineTag(MarkupTag):
             TagAttributesEnum.SPACING,
             0.25,
             kwargs,
-            values=[0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 4.0, 0.0]
-        )
+            values=[0.1, 0.2, 0.25, 0.5, 1.0, 2.0, 4.0, 0.0])
 
         lineType = a.getAsEnumerated(
             TagAttributesEnum.LINE_TYPE + TagAttributesEnum.TYPE,
             LineTypesEnum,
-            LineTypesEnum.SOLID
-        )
+            LineTypesEnum.SOLID)
 
         color = a.getAsColorMixer(
             TagAttributesEnum.COLOR,
-            None,
-        )
+            None, kwargs)
 
         lineWidth = a.getAsInt(
             TagAttributesEnum.LINE_WIDTH + TagAttributesEnum.WIDTH,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
 
         if lineWidth is None:
             lineWidthEnum = a.getAsEnumerated(
                 TagAttributesEnum.LINE_WIDTH + TagAttributesEnum.WIDTH,
                 GeneralSizeEnum,
-                GeneralSizeEnum.xxsmall
-            )
+                GeneralSizeEnum.xxsmall)
             if lineWidthEnum == GeneralSizeEnum.xxsmall[0]:
                 lineWidth = 1
             elif lineWidthEnum == GeneralSizeEnum.xsmall[0]:
@@ -97,7 +92,7 @@ class LineTag(MarkupTag):
                      a.styleGroup)
 
         if lineColor == 'currentColor':
-            a.classes.add('v-S-borbor', a.styleGroup)
+            a.classes.add('sfml-line-color', a.styleGroup)
 
         if spacing:
             a.styles.add('margin', str(spacing) + 'em auto')
