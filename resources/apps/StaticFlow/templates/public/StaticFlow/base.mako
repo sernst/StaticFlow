@@ -20,6 +20,17 @@
     <meta property="og:description" content="${mr.pageData.description}"/>
     <meta property="og:site_name" content="${mr.pageProcessor.siteData.get('TITLE')}"/>
     <meta property="og:type" content="${mr.pageData.get('TYPE', 'website')}"/>
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="${mr.pageData.targetUrl}">
+    <meta name="twitter:title" content="${mr.pageData.title}">
+    <meta name="twitter:description" content="${mr.pageData.description}">
+
+    <link rel="canonical" href="${mr.pageData.targetUrl}"/>
+    % if mr.pageData.author.gplusAuthorUrl:
+        <link rel="author" href="${mr.pageData.author.gplusAuthorUrl}"/>
+    % endif
+
     <script>
         window.PAGE=${mr.pageVars | n};
     </script>

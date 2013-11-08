@@ -16,6 +16,7 @@ from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
+from StaticFlow.process.AuthorData import AuthorData
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.rss.RssFileGenerator import RssFileGenerator
 
@@ -44,6 +45,7 @@ class PageData(object):
         self._childPages        = []
         self._rssGenerator      = None
         self._pageVars          = None
+        self._authorData        = None
         self._loadDefinitions()
 
         # If an RSS definition exists create an RSS generator
@@ -54,6 +56,13 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: author
+    @property
+    def author(self):
+        if not self._authorData:
+            self._authorData = AuthorData(self)
+        return self._authorData
 
 #___________________________________________________________________________________________________ GS: title
     @property
