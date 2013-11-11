@@ -101,9 +101,16 @@ class SFlowApi
         dom.find('img[data-src!=""]').each((index, element) ->
             e   = $(element)
             src = e.attr('data-src')
-            if src and src.length > 0 and src.substr(1, 1) != '/'
-                src = PAGE.CDN_URL + src
             e.attr('data-src', null)
+
+            # Skip empty data-src values
+            if not src or src.length == 0
+                return
+
+            # Add CDN prefix to relative URLs
+            if src.substr(0, 2) != '//' and src.substr(0, 4) != 'http'
+                src = PAGE.CDN_URL + src
+
             e.attr('src', src)
         )
 

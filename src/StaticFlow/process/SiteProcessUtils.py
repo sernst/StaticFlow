@@ -44,8 +44,7 @@ class SiteProcessUtils(object):
 
         if 'Expires' not in headers:
             headers['Expires'] = TimeUtils.dateTimeToWebTimestamp(
-                datetime.datetime.utcnow() + datetime.timedelta(days=360)
-            )
+                datetime.datetime.utcnow() + datetime.timedelta(days=360))
         cls.createHeaderFile(destPath, lastModified=lastModified, headers=headers)
         return True
 
@@ -167,8 +166,7 @@ class SiteProcessUtils(object):
     @classmethod
     def compileCss(cls, processor, path):
         outPath = FileUtils.changePathRoot(
-            path, processor.sourceWebRootPath, processor.targetWebRootPath
-        )
+            path, processor.sourceWebRootPath, processor.targetWebRootPath)
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
         if processor.isLocal:

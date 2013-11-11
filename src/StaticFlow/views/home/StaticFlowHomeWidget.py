@@ -147,14 +147,11 @@ class StaticFlowHomeWidget(PyGlassWidget):
 #___________________________________________________________________________________________________ _handleLocatePath
     def _handleLocatePath(self):
         self.refreshGui()
-        path = QtGui.QFileDialog.getExistingDirectory(
-            self,
-            caption=u'Specify Static Flow Project Path',
-            dir=self.rootPath
-        )
+        path = PyGlassBasicDialogManager.browseForDirectory(
+            parent=self,
+            caption=u'Specify Static Flow Project Path')
 
         if path:
-            path = FileUtils.cleanupPath(path)
             self._pathLineEdit.setText(path)
 
 #___________________________________________________________________________________________________ _handlePathUpdated
