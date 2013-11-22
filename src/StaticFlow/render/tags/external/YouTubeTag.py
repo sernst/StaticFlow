@@ -159,7 +159,7 @@ class YouTubeTag(MarkupTag):
             a.render['code'] = YouTubeTag._DEFAULT_CODE if code is None else code
 
             if self._processor.privateView:
-                MarkupTagError(tag=self, code='missing-url-attribute').log()
+                MarkupTagError(tag=self, errorDef=MarkupTagError.MISSING_URL).log()
 
         # a.render is a dict for storing arbitrary render data keys and values that will be used
         # by the mako template.

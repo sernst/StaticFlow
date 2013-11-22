@@ -155,11 +155,11 @@ class MarkupBlockTag(MarkupTag):
                 childEnd = max(childEnd, c.end())
 
         if self.closeBlock is None:
-            MarkupTagError(tag=self, code=MarkupTagError.UNCLOSED_TAG).log()
+            MarkupTagError(tag=self, errorDef=MarkupTagError.UNCLOSED_TAG).log()
             return False
 
         if self.end() < childEnd:
-            MarkupTagError(tag=self, code=MarkupTagError.PREMATURE_CLOSE, errorAtEnd=True).log()
+            MarkupTagError(tag=self, errorDef=MarkupTagError.PREMATURE_CLOSE, errorAtEnd=True).log()
 
         return True
 

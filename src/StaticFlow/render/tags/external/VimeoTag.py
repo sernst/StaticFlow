@@ -89,7 +89,7 @@ class VimeoTag(MarkupTag):
             a.render['code'] = VimeoTag._DEFAULT_CODE
 
             if self._processor.privateView:
-                MarkupTagError(tag=self, code='missing-url-attribute').log()
+                MarkupTagError(tag=self, errorDef=MarkupTagError.MISSING_URL).log()
 
         a.render['autoplay'] = u'1' if play else u'0'
         a.render['color']    = unicode(color)

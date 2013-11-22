@@ -80,7 +80,7 @@ class WebResourcePackager(object):
             print result
             return False
 
-        print 'COMPILED: loader.js'
+        print u'COMPILED: loader.js'
         return True
 
 #___________________________________________________________________________________________________ _createEngineCss
@@ -113,7 +113,7 @@ class WebResourcePackager(object):
             print 'ERROR: Failed to build CSS engine file at:', targetPath
             return False
 
-        print 'ASSEMBLED: engine.css'
+        print u'ASSEMBLED: engine.css'
         return True
 
 

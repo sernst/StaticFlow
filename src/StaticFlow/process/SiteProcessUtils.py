@@ -78,12 +78,10 @@ class SiteProcessUtils(object):
         url = u'http://' + domain + u'/'
         if path.startswith(processor.sourceWebRootPath):
             url += u'/'.join(cls.getFolderParts(
-                path, processor.sourceWebRootPath, includeFilename=not isIndex
-            ))
+                path, processor.sourceWebRootPath, includeFilename=not isIndex))
         elif path.startswith(processor.targetWebRootPath):
             url += u'/'.join(cls.getFolderParts(
-                path, processor.targetWebRootPath, includeFilename=not isIndex
-            ))
+                path, processor.targetWebRootPath, includeFilename=not isIndex))
         else:
             return u''
 
@@ -146,11 +144,13 @@ class SiteProcessUtils(object):
         outDir = os.path.dirname(outPath)
         result = cls.compileCoffeescriptFile(csPath, outDir, minify=not processor.isLocal)
         if result['code']:
-            processor.log.write(u'ERROR: [Failed to compile]: ' + unicode(path))
+            processor.log.write(
+                u'<span style="color:#FF9999;">ERROR:</span> [Failed to compile]: ' + unicode(path))
             print result
             return False
         else:
-            processor.log.write(u'COMPILED [js]: ' + unicode(path))
+            processor.log.write(
+                u'<span style="color:#66AA66;">COMPILED: </span> %s' % unicode(path))
 
         lastModified = FileUtils.getUTCModifiedDatetime(csPath)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
@@ -158,7 +158,7 @@ class SiteProcessUtils(object):
             return True
 
         cls.copyToCdnFolder(outPath, processor, lastModified)
-        processor.log.write(u'COMPRESSED [js]: ' + unicode(outPath))
+        processor.log.write(u'<span style="color:#66AA66;">COMPRESSED:</span> ' + unicode(outPath))
 
         return True
 
@@ -171,7 +171,7 @@ class SiteProcessUtils(object):
 
         if processor.isLocal:
             shutil.copy(path, outPath)
-            processor.log.write(u'COPIED [css]: ' + unicode(path))
+            processor.log.write(u'<span style="color:#66AA66;">COPIED:</div> ' + unicode(path))
         else:
             cmd = cls.modifyNodeCommand([
                 FileUtils.createPath(
@@ -184,11 +184,13 @@ class SiteProcessUtils(object):
             result = SystemUtils.executeCommand(cmd)
             if result['code']:
                 processor.log.write(unicode(result['error']))
-                processor.log.write(u'ERROR [CSS compilation failure]: ' + unicode(path))
+                processor.log.write(
+                    u'<span style="color:#FF9999;">ERROR</span> [CSS compilation failure]: '
+                    + unicode(path))
                 os.chdir(iniDirectory)
                 return False
 
-            processor.log.write(u'COMPRESSED [css]: ' +  unicode(path))
+            processor.log.write(u'<span style="color:#66AA66;">COMPRESSED:</span> ' +  unicode(path))
             os.chdir(iniDirectory)
 
         source = FileUtils.getContents(outPath)

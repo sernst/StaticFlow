@@ -91,7 +91,7 @@ class AttributeData(DomRenderData):
         except Exception, err:
             MarkupTagError(
                 tag=tag,
-                code=MarkupTagError.CORRUPT_ATTRS
+                errorDef=MarkupTagError.CORRUPT_ATTRS
             ).log()
             tag.log.writeError([
                 'VML ATTRIBUTE PARSE FAILURE',
@@ -122,8 +122,7 @@ class AttributeData(DomRenderData):
                         keyData=keyData,
                         keyGroup=None,
                         rawValue=val,
-                        code=MarkupAttributeError.INVALID_ATTRIBUTE,
-                    )
+                        errorDef=MarkupAttributeError.INVALID_ATTRIBUTE)
 
         self.id.add(self.get(TagAttributesEnum.ID, self.uid).replace(' ', ''))
         self.classes.add(self.get(TagAttributesEnum.HTML_CLASS, None))
@@ -155,7 +154,7 @@ class AttributeData(DomRenderData):
                         keyData=keyData,
                         keyGroup=TagAttributesEnum.HTML_STYLE,
                         rawValue=css,
-                        code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                        errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                     ).log()
                     continue
                 elif len(c) > 2:
@@ -195,7 +194,10 @@ class AttributeData(DomRenderData):
                     keyData=themeKeyData,
                     keyGroup=TagAttributesEnum.THEME,
                     rawValue=themeValue,
-                    code='no-such-theme'
+                    errorDef=MarkupAttributeError.ERROR_DEFINITION_NT(
+                        u'no-such-theme',
+                        u'No Such Theme',
+                        u'The theme "%s" is not valid' % themeValue)
                 )
         else:
             self._themeChanged = False
@@ -414,8 +416,10 @@ class AttributeData(DomRenderData):
         return True
 
 #___________________________________________________________________________________________________ logAttributeError
-    def logAttributeError(self, keyData, keyGroup, rawValue, value =None, message =None, code =None,
-                          critical =False):
+    def logAttributeError(
+            self, keyData, keyGroup, rawValue, value =None, message =None, errorDef =None,
+            critical =False
+    ):
         """Logs an attribute failure with the tag in which the error failed.
 
         @@@param attributeName:string
@@ -435,17 +439,16 @@ class AttributeData(DomRenderData):
             keyName       = None
             attributeData = None
 
-        v = MarkupAttributeError(
+        MarkupAttributeError(
             tag=self._tag,
             message=message,
-            code=code,
+            errorDef=errorDef,
             attribute=keyName,
             attributeGroup=keyGroup,
             attributeData=attributeData,
             value=value,
             rawValue=rawValue,
-            critical=critical
-        ).log()
+            critical=critical).log()
 
 #___________________________________________________________________________________________________ addTagClasses
     def addTagClasses(self, suffix ='', group =None):
@@ -669,7 +672,7 @@ class AttributeData(DomRenderData):
                         keyData=keyData,
                         keyGroup=keys,
                         rawValue=item,
-                        code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                        errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                     )
             if outList:
                 if returnKey:
@@ -687,7 +690,7 @@ class AttributeData(DomRenderData):
                 keyData=keyData,
                 keyGroup=keys,
                 rawValue=out,
-                code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
             )
 
         dv = defaultValue[0] if isinstance(defaultValue, list) else defaultValue
@@ -785,7 +788,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
             if returnKey:
                 return defaultValue, None
@@ -833,7 +836,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
                 return
 
@@ -886,7 +889,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
             elif out:
                 if returnKey:
@@ -946,7 +949,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
         except Exception, err:
             if not allowFailure:
@@ -954,7 +957,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
 
         dv = UnitAttribute(value=defaultValue, unit=defaultUnit, unitType=unitType) \
@@ -985,7 +988,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
 
             if returnKey:
@@ -1014,7 +1017,7 @@ class AttributeData(DomRenderData):
                     keyData=keyData,
                     keyGroup=keys,
                     rawValue=raw,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
                 )
 
             if returnKey:
@@ -1054,7 +1057,7 @@ class AttributeData(DomRenderData):
                 keyData=keyData,
                 keyGroup=keys,
                 rawValue=raw,
-                code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
+                errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE
             )
 
         if returnKey:
@@ -1263,7 +1266,7 @@ class AttributeData(DomRenderData):
             except Exception, err:
                 MarkupTagError(
                     tag=self._tag,
-                    code=MarkupTagError.CORRUPT_ATTRS
+                    errorDef=MarkupTagError.CORRUPT_ATTRS
                 ).log()
                 self._tag.log.writeError([
                     'Attribute parsing error',

@@ -2,6 +2,8 @@
 # (C)2012-2013
 # Scott Ernst
 
+from pyaid.ArgsUtils import ArgsUtils
+
 from StaticFlow.render.error.MarkupError import MarkupError
 
 #___________________________________________________________________________________________________ MarkupGlobalError
@@ -11,16 +13,30 @@ class MarkupGlobalError(MarkupError):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    READ_FAILURE        = 'read-failure'
-    FICTIONAL_TAG       = 'fictional-tag'
-    UNMATCHED_CLOSE_TAG = 'unmatched-close-tag'
-    TAG_CREATION_FAILED = 'tag-create-failure'
+    READ_FAILURE = MarkupError.ERROR_DEFINITION_NT(
+        u'read-failure',
+        u'Render Read Failure',
+        u'Unable to read the markup.')
 
-    _DEFAULT_CODE       = 'read-failure'
+    FICTIONAL_TAG = MarkupError.ERROR_DEFINITION_NT(
+        u'fictional-tag',
+        u'Fictional Tag',
+        u'Unknown tag.')
+
+    UNMATCHED_CLOSE_TAG = MarkupError.ERROR_DEFINITION_NT(
+        u'unmatched-close-tag',
+        u'Missing Closed Tag',
+        u'Unmatched closing tag.')
+
+    TAG_CREATION_FAILED = MarkupError.ERROR_DEFINITION_NT(
+        u'tag-create-failure',
+        u'Tag Creation Failed',
+        u'Unable to create the tag with the specified attributes.')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, **kwargs):
-        MarkupError.__init__(self, defaultCode=MarkupGlobalError._DEFAULT_CODE, **kwargs)
+        ArgsUtils.addIfMissing('errorDef', self.READ_FAILURE, kwargs, True)
+        MarkupError.__init__(self, **kwargs)
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

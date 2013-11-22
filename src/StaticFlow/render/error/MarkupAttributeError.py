@@ -13,10 +13,15 @@ class MarkupAttributeError(MarkupError):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    INVALID_ATTRIBUTE   = 'invalid-attribute'
-    BAD_ATTRIBUTE_VALUE = 'bad-attribute-value'
+    INVALID_ATTRIBUTE = MarkupError.ERROR_DEFINITION_NT(
+        u'invalid-attribute',
+        u'Invalid "#ATTR#" Attribute',
+        u'The "#ATTR#" attribute in the "#TAG#" tag is unrecognized.')
 
-    _DEFAULT_CODE       = 'invalid-attribute'
+    BAD_ATTRIBUTE_VALUE = MarkupError.ERROR_DEFINITION_NT(
+        u'bad-attribute-value',
+        u'Bad Attribute Value',
+        u'Unable to read the value "#VAL#" of the "#ATTR#" attribute in the "#TAG#" tag.')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, **kwargs):
@@ -29,11 +34,15 @@ class MarkupAttributeError(MarkupError):
         self._attrData          = ArgsUtils.get('attributeData', None, kwargs)
         self._attributeSource   = None
 
-        MarkupError.__init__(
-            self,
-            defaultCode=MarkupAttributeError._DEFAULT_CODE,
-            **kwargs
-        )
+        replacements = ArgsUtils.getAsList('replacements', kwargs)
+        replacements.append(
+            [u'#ATTR#', unicode(self.attribute if self.attribute else u'???')])
+        replacements.append(
+            [u'#VAL#', unicode(self.value if self.value else u'???')])
+        kwargs['replacements'] = replacements
+
+        ArgsUtils.addIfMissing('errorDef', self.INVALID_ATTRIBUTE, kwargs, True)
+        MarkupError.__init__(self, **kwargs)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -69,7 +78,7 @@ class MarkupAttributeError(MarkupError):
 #___________________________________________________________________________________________________ _getLogData
     def _getLogData(self):
         """Doc..."""
-        return [u'Attribute: ' + unicode(self.attributeSource)]
+        return {'attribute':unicode(self.attributeSource)}
 
 #___________________________________________________________________________________________________ _getErrorDOMData
     def _getErrorDOMData(self, data):

@@ -85,11 +85,13 @@ class ImageTag(MarkupTag):
         if not url:
             MarkupAttributeError(
                 tag=self,
-                code='no-image-specified',
+                errorDef=MarkupAttributeError.ERROR_DEFINITION_NT(
+                    u'no-image-specified',
+                    u'No Image Specified',
+                    u'Missing image URL or path definition attribute.'),
                 attribute=urlKeyData[0],
                 attributeData=urlKeyData[1],
-                attributeGroup=TagAttributesEnum.URL
-            ).log()
+                attributeGroup=TagAttributesEnum.URL).log()
 
         w = wide.value
         h = tall.value

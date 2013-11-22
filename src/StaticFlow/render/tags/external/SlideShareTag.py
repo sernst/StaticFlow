@@ -75,7 +75,7 @@ class SlideShareTag(MarkupTag):
             a.render['code'] = SlideShareTag._DEFAULT_CODE
 
             if self._processor.privateView:
-                MarkupTagError(tag=self, code='missing-url-attribute').log()
+                MarkupTagError(tag=self, errorDef=MarkupTagError.MISSING_URL).log()
 
         try:
             start = int(start)

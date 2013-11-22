@@ -444,7 +444,7 @@ class PageData(object):
         if source is None:
             return False
 
-        mp = MarkupProcessor(source)
+        mp = MarkupProcessor(source, path=self.sourcePath)
         mp.get(pageData=self, pageProcessor=self.processor)
 
         self._markupProcessor = mp
@@ -452,7 +452,7 @@ class PageData(object):
         if mp.hasErrors:
             for renderError in mp.renderErrors:
                 self._processor.log.write(
-                    u'\n' + 100*u'-' + u'\n   RENDER ERROR:\n' + unicode(renderError.getLogData()))
+                    u'<hr />' + unicode(renderError.getHtmlLogDisplay()) + u'<br />')
             return False
 
         self._date = self._parseDate(ArgsUtils.extract('date', None, mp.metadata))
@@ -509,7 +509,9 @@ class PageData(object):
             self.processor.sitemap.add(self)
 
             self._processor.log.write(
-                u'CREATED: ' + unicode(self.targetPath) + u' -> ' + self.targetUrl)
+                u'<span style="color:#66AA66;">CREATED: </span> %s -&gt; %s' % (
+                    unicode(self.targetPath),
+                    self.targetUrl) )
         except Exception, err:
             self._processor.log.writeError(u'HTML Page Creation Error', err)
             return False

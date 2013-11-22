@@ -15,7 +15,6 @@ from pyglass.widgets.PyGlassWidget import PyGlassWidget
 
 from StaticFlow.enum.AppConfigEnum import AppConfigEnum
 from StaticFlow.threads.SiteDeploymentThread import SiteDeploymentThread
-from StaticFlow.views.recent.RecentPathElement import RecentPathElement
 
 #___________________________________________________________________________________________________ StaticFlowDeployWidget
 class StaticFlowDeployWidget(PyGlassWidget):
@@ -58,7 +57,7 @@ class StaticFlowDeployWidget(PyGlassWidget):
         topLayout.addWidget(btn)
         self._closeBtn = btn
 
-        self._statusText = QtGui.QPlainTextEdit(self)
+        self._statusText = QtGui.QTextEdit(self)
         self._statusText.setReadOnly(True)
         self._statusText.setWordWrapMode(QtGui.QTextOption.NoWrap)
         mainLayout.addWidget(self._statusText)
@@ -109,7 +108,7 @@ class StaticFlowDeployWidget(PyGlassWidget):
 
 #___________________________________________________________________________________________________ _handleLogData
     def _handleLogData(self, data):
-        self._statusText.appendPlainText(unicode(data))
+        self._statusText.append(unicode(data))
         self._statusText.moveCursor(QtGui.QTextCursor.End)
 
 #___________________________________________________________________________________________________ _handleDeploymentExecutionComplete

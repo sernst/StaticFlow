@@ -12,13 +12,35 @@ class MarkupTagError(MarkupError):
 #===================================================================================================
 #                                                                                       C L A S S
 
-    READ_FAILURE    = 'tag-read-failure'
-    UNCLOSED_TAG    = 'unclosed-tag'
-    CORRUPT_ATTRS   = 'corrupt-attributes'
-    RENDER_FAILURE  = 'render-failure'
-    PREMATURE_CLOSE = 'incorrect-close-order'
+    MISSING_URL = MarkupError.ERROR_DEFINITION_NT(
+        u'missing-url-attribute',
+        u'Missing URL Attribute',
+        u'No URL attribute was specified in the "#TAG#" tag.')
 
-    _DEFAULT_CODE   = 'tag-read-failure'
+    READ_FAILURE = MarkupError.ERROR_DEFINITION_NT(
+        u'tag-read-failure',
+        u'Invalid Tag "#TAG"',
+        u'Unable to read the "#TAG#" tag.')
+
+    UNCLOSED_TAG = MarkupError.ERROR_DEFINITION_NT(
+        u'unclosed-tag',
+        u'Unclosed #TAG# Tag',
+        u'The "#TAG#" tag has no closed pair.')
+
+    CORRUPT_ATTRS = MarkupError.ERROR_DEFINITION_NT(
+        u'corrupt-attributes',
+        u'Corrupt Attributes',
+        u'One or more attributes of the "#TAG#" tag are invalid.')
+
+    RENDER_FAILURE = MarkupError.ERROR_DEFINITION_NT(
+        u'render-failure',
+        u'Read Failure',
+        u'Unable to read the "#TAG#" tag.')
+
+    PREMATURE_CLOSE = MarkupError.ERROR_DEFINITION_NT(
+        u'incorrect-close-order',
+        u'Tags out of Order',
+        u'The #TAG# has been closed in the incorrect order.')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, **kwargs):
@@ -26,7 +48,8 @@ class MarkupTagError(MarkupError):
 
         self._errorAtEnd = ArgsUtils.extract('errorAtEnd', False, kwargs)
 
-        MarkupError.__init__(self, defaultCode=MarkupTagError._DEFAULT_CODE, **kwargs)
+        ArgsUtils.addIfMissing('errorDef', self.READ_FAILURE, kwargs, True)
+        MarkupError.__init__(self, **kwargs)
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

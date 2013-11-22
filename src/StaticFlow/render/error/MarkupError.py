@@ -2,9 +2,12 @@
 # (C)2012-2013
 # Scott Ernst
 
+from collections import namedtuple
+
 import markupsafe
 
 from pyaid.ArgsUtils import ArgsUtils
+from pyaid.debug.Logger import Logger
 
 #___________________________________________________________________________________________________ MarkupError
 class MarkupError(object):
@@ -13,35 +16,31 @@ class MarkupError(object):
 #===================================================================================================
 #                                                                                       C L A S S
 
+    ERROR_DEFINITION_NT = namedtuple('ERROR_DEFINITION_NT', ['code', 'label', 'message'])
+
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, defaultCode, **kwargs):
+    def __init__(self, **kwargs):
         """Creates a new instance of MarkupError."""
 
-        self._code = ArgsUtils.get('code', defaultCode, kwargs)
-        if not self._code:
-            self._code = defaultCode
-
+        self._thrown     = Logger.getFormattedStackTrace(2, 3)
+        self._definition = ArgsUtils.get('errorDef', None, kwargs)
         self._tag        = ArgsUtils.get('tag', None, kwargs)
         self._block      = ArgsUtils.get('block', self._tag.block if self._tag else None, kwargs)
         self._processor  = ArgsUtils.get('processor', self._tag.processor if self._tag else None, kwargs)
-        self._label      = ArgsUtils.get('label', None, kwargs)
-        self._message    = ArgsUtils.get('message', None, kwargs)
+        self._code       = ArgsUtils.get('code', self._definition.code, kwargs, allowNone=False)
+        self.label       = ArgsUtils.get('label', self._definition.label, kwargs, allowNone=False)
+        self.message     = ArgsUtils.get('message', self._definition.message, kwargs, allowNone=False)
         self._critical   = ArgsUtils.get('critical', False, kwargs)
-        self._quotedInfo = ArgsUtils.get('quotedInfo', None, kwargs)
 
-        replacements    = ArgsUtils.get('replacements', [], kwargs)
+        replacements = ArgsUtils.getAsList('replacements', kwargs)
         replacements.append([u'#TAG#', unicode(self._tag.tagName if self._tag else u'???')])
 
-
-        self._label     = ArgsUtils.get('label', 'Unknown Error', kwargs)
-        self._message   = ArgsUtils.get('message', 'This error is a mystery!', kwargs)
-
         for r in replacements:
-            if self._message:
-                self._message = self._message.replace(unicode(r[0]), unicode(r[1]))
+            if self.message:
+                self.message = self.message.replace(unicode(r[0]), unicode(r[1]))
 
-            if self._label:
-                self._label = self._label.replace(unicode(r[0]), unicode(r[1]))
+            if self.label:
+                self.label = self.label.replace(unicode(r[0]), unicode(r[1]))
 
         self._verbose   = ArgsUtils.get('verbose', False, kwargs)
         self._line      = None
@@ -52,11 +51,6 @@ class MarkupError(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
-
-#___________________________________________________________________________________________________ GS: quotedInfo
-    @property
-    def quotedInfo(self):
-        return self._quotedInfo.strip() if self._quotedInfo else None
 
 #___________________________________________________________________________________________________ GS: critical
     @property
@@ -70,22 +64,6 @@ class MarkupError(object):
     @code.setter
     def code(self, value):
         self._code = value
-
-#___________________________________________________________________________________________________ GS: label
-    @property
-    def label(self):
-        return self._label
-    @label.setter
-    def label(self, value):
-        self._label = value
-
-#___________________________________________________________________________________________________ GS: message
-    @property
-    def message(self):
-        return self._message
-    @message.setter
-    def message(self, value):
-        self._message = value
 
 #___________________________________________________________________________________________________ GS: line
     @property
@@ -112,23 +90,69 @@ class MarkupError(object):
 
 #___________________________________________________________________________________________________ echo
     def echo(self):
+        data = self.getLogData()
         if self._processor and self._processor.log.trace:
-            self._processor.log.write(self.getLogData())
+            self._processor.log.write(data)
         else:
-            print self.getLogData()
+            print data
+
+#___________________________________________________________________________________________________ getHtmlLogDisplay
+    def getHtmlLogDisplay(self):
+        data = self.getLogData()
+        out = [
+            u'<div style="color:#FF6666;font-size:20px;">[RENDER ERROR]: %s</div>' % (data['label']),
+            u'<div style="font-size:14px">',
+            u'<div>%s</div>' % data['message'],
+            u'</div><br />',
+            u'<div style="font-size:14px;">On line <span style="font-weight:bold">#%s.%s</span>' % (
+                data['location'][0],
+                data['location'][1] ) ]
+
+        if self._processor.filename:
+            out[-1] += u' of <span style="font-weight:bold;">%s</span></div>' \
+                % self._processor.filename
+
+            if self._processor.filePath:
+                out.append(
+                    u'<div style="color:#666666;font-size:11px;">%s</div><br />'
+                    % self._processor.filePath)
+        else:
+            out.append(u'</div><br />')
+
+        if self._source:
+            out.append(
+                u'<div style="font-size:12px;font-color:#333333;">%s</div><br />' % self._source)
+
+        out += self._getHtmlLogDisplay()
+
+        out += [
+            u'<ul style="color:#333333;">',
+            u'<li>Code: %s</li>' % data['code'],
+            u'<li>Type: %s</li>' % data['type'],
+            u'<li>Tag: %s</li>' % data['tag'],
+            u'<li>Block: %s</li>' % data['block'],
+            u'</ul>',
+            u'<div style="font-size:10px;color:#AAAAAA"><span style="font-weight:bold">Thrown At:</span>%s</div>' %
+                self._thrown.replace(
+                    '\n', u'<br />').replace(
+                    '  ', '&nbsp;&nbsp;').replace(
+                    '\t', '&nbsp;&nbsp;&nbsp;&nbsp;')]
+
+        return u'\n'.join(out)
 
 #___________________________________________________________________________________________________ getLogData
     def getLogData(self):
-        logs = [
-            unicode(self.__class__.__name__),
-            u'Code: ' + unicode(self.code),
-            u'Label: ' + unicode(self.label),
-            u'Location: %s.%s' % (unicode(self.line), unicode(self.character)),
-            u'Block: ' + unicode(self._block),
-            u'Tag: ' + unicode(self._tag),
-            u'Info: ' + unicode((u'\n' + unicode(self.quotedInfo)) if self.quotedInfo else None)
-        ] + self._getLogData()
-        logs.append(u'Source: ' + unicode(self._logSource))
+        logs = {
+            'type':unicode(self.__class__.__name__),
+            'code':unicode(self.code),
+            'label':unicode(self.label),
+            'location':(self.line, self.character),
+            'block':str(self._block),
+            'tag':str(self._tag),
+            'message':unicode(self.message) }
+
+        logs = dict(logs.items() + self._getLogData().items())
+        logs['source'] = unicode(self._logSource)
         return logs
 
 #___________________________________________________________________________________________________ log
@@ -147,10 +171,14 @@ class MarkupError(object):
 #===================================================================================================
 #                                                                               P R O T E C T E D
 
+#___________________________________________________________________________________________________ _getHtmlLogDisplay
+    def _getHtmlLogDisplay(self):
+        return []
+
 #___________________________________________________________________________________________________ _getLogData
     def _getLogData(self):
         """Doc..."""
-        return []
+        return dict()
 
 #___________________________________________________________________________________________________ _getErrorDOMData
     def _getErrorDOMData(self, data):
@@ -198,7 +226,7 @@ class MarkupError(object):
             s = u'Unable to display source code...'
         self._logSource = s
 
-        s = s.replace(u'#OPEN#', u'<span class="v-vmldebug-errorHighlight">') \
+        s = s.replace(u'#OPEN#', u'<span style="color:#FF3333;font-weight:bold;">') \
              .replace(u'#CLOSE#', u'</span>') \
              .replace(u'#BR#', u'<br />')
 

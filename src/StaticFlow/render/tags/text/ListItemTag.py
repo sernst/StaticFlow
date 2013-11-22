@@ -58,8 +58,10 @@ class ListItemTag(MarkupBlockTag):
         if not listParent and not isinstance(self.parent, ListItemTag):
             MarkupTagError(
                 tag=self,
-                code='orphaned-list-item'
-            ).log()
+                errorDef=MarkupTagError.ERROR_DEFINITION_NT(
+                    u'orphaned-list-item',
+                    u'Orphaned List Item',
+                    u'List item tag appears outside of a list.') ).log()
 
         subLists   = []
         openList   = []
@@ -92,8 +94,7 @@ class ListItemTag(MarkupBlockTag):
         if isinstance(self.parent, ListTag):
             isOrdered  = self.parent.isOrdered
             attributes = {
-                'type':[self.parent.attrs.getAsKeyword(TagAttributesEnum.TYPE, 'bullet'), None]
-            }
+                'type':[self.parent.attrs.getAsKeyword(TagAttributesEnum.TYPE, 'bullet'), None] }
         else:
             isOrdered  = False
             attributes = None

@@ -65,6 +65,12 @@ class MarkupProcessor(TextAnalyzer):
         self.pageData      = ArgsUtils.get('pageData', None, kwargs)
         self.pageProcessor = ArgsUtils.get('pageProcessor', None, kwargs)
 
+        self.filePath = ArgsUtils.get('path', None, kwargs)
+        self.filename = ArgsUtils.get(
+            'filename',
+            os.path.basename(self.filePath) if self.filePath else None,
+            kwargs)
+
         debugData = ArgsUtils.extract('debugData', None, kwargs)
         blocks    = {
             'root':[
@@ -412,7 +418,7 @@ class MarkupProcessor(TextAnalyzer):
 
                     MarkupGlobalError(
                         processor=self,
-                        code=MarkupGlobalError.TAG_CREATION_FAILED,
+                        errorDef=MarkupGlobalError.TAG_CREATION_FAILED,
                         block=g,
                         replacements=[[u'#TAG#', tagName]]).log()
                     continue
@@ -420,7 +426,7 @@ class MarkupProcessor(TextAnalyzer):
                 if t is None:
                     MarkupGlobalError(
                         processor=self,
-                        code=MarkupGlobalError.FICTIONAL_TAG,
+                        errorDef=MarkupGlobalError.FICTIONAL_TAG,
                         block=g).log()
                     self._addError('Unrecognized tag: ' + str(g))
                     continue
@@ -457,7 +463,7 @@ class MarkupProcessor(TextAnalyzer):
                 if not matched:
                     MarkupGlobalError(
                         processor=self,
-                        code=MarkupGlobalError.UNMATCHED_CLOSE_TAG,
+                        errorDef=MarkupGlobalError.UNMATCHED_CLOSE_TAG,
                         block=g
                     ).log()
                     self._addError('Unmatched block: ' + str(g))

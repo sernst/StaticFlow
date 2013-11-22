@@ -59,7 +59,7 @@ class SitemapManager(object):
         result = mr.render()
 
         if not mr.success:
-            self._processor.log.write(u'ERROR: ' + unicode(mr.errorMessage))
+            self._processor.log.write(u'<span style="color:#66AA66;">ERROR:</span> ' + unicode(mr.errorMessage))
             return False
 
         return FileUtils.putContents(result, self.sitemapTargetPath)

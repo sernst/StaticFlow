@@ -27,6 +27,11 @@ class HuluTag(MarkupTag):
     _URL_RE       = re.compile('http://www\.hulu\.com/embed/(?P<code>[^"?]+)')
     _DEFAULT_CODE = u'jFY7Fwz02N3gSJip5OhIxw'
 
+    _INVALID_ERROR_FRAME_DEF = MarkupAttributeError.ERROR_DEFINITION_NT(
+        u'invalid-frame-number',
+        u'Invalid Frame Number',
+        u'The frame number is invalid for this video.')
+
 #===================================================================================================
 #                                                                                     P U B L I C
 
@@ -85,9 +90,13 @@ class HuluTag(MarkupTag):
                     except Exception, err:
                         start = 0
 
-                        MarkupAttributeError(tag=self, code='invalid-frame-number',
-                                          attribute=startKeyData[0], attributeData=startKeyData[1],
-                                          attributeGroup=TagAttributesEnum.START, rawValue=start).log()
+                        MarkupAttributeError(
+                            tag=self,
+                            errorDef=self._INVALID_ERROR_FRAME_DEF,
+                            attribute=startKeyData[0],
+                            attributeData=startKeyData[1],
+                            attributeGroup=TagAttributesEnum.START,
+                            rawValue=start).log()
 
                 stop, stopKeyData = a.get(TagAttributesEnum.STOP, None, kwargs, returnKey=True)
                 if stop:
@@ -96,9 +105,13 @@ class HuluTag(MarkupTag):
                     except Exception, err:
                         stop = 0
 
-                        MarkupAttributeError(tag=self, code='invalid-frame-number',
-                                          attribute=stopKeyData[0], attributeData=stopKeyData[1],
-                                          attributeGroup=TagAttributesEnum.STOP, rawValue=stop).log()
+                        MarkupAttributeError(
+                            tag=self,
+                            errorDef=self._INVALID_ERROR_FRAME_DEF,
+                            attribute=stopKeyData[0],
+                            attributeData=stopKeyData[1],
+                            attributeGroup=TagAttributesEnum.STOP,
+                            rawValue=stop).log()
 
 
                 thumb, thumbKeyData = a.get(TagAttributesEnum.THUMB, None, kwargs, returnKey=True)
@@ -108,9 +121,13 @@ class HuluTag(MarkupTag):
                     except Exception, err:
                         thumn = 0
 
-                        MarkupAttributeError(tag=self, code='invalid-frame-number',
-                                          attribute=thumbKeyData[0], attributeData=thumbKeyData[1],
-                                          attributeGroup=TagAttributesEnum.THUMB, rawValue=thumb).log()
+                        MarkupAttributeError(
+                            tag=self,
+                            errorDef=self._INVALID_ERROR_FRAME_DEF,
+                            attribute=thumbKeyData[0],
+                            attributeData=thumbKeyData[1],
+                            attributeGroup=TagAttributesEnum.THUMB,
+                            rawValue=thumb).log()
 
                 if thumb is not None:
                     if start is None:
@@ -139,7 +156,7 @@ class HuluTag(MarkupTag):
             a.render['code'] = HuluTag._DEFAULT_CODE
 
             if self._processor.privateView:
-                MarkupTagError(tag=self, code='missing-url-attribute').log()
+                MarkupTagError(tag=self, errorDef=MarkupTagError.MISSING_URL).log()
 
         a.addTagClasses('player', 'player')
 

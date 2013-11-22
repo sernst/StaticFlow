@@ -102,7 +102,7 @@ class SoundCloudTag(MarkupTag):
             a.render['type'] = u'tracks'
 
             if self._processor.privateView:
-                MarkupTagError(tag=self, code='missing-url-attribute').log()
+                MarkupTagError(tag=self, errorDef=MarkupTagError.MISSING_URL).log()
 
         a.render['autoplay'] = u'true' if play else u'false'
         a.render['artwork']  = u'true' if artwork else u'false'

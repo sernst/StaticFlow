@@ -75,7 +75,7 @@ class LayoutAttributeParser(object):
             if not allowFailure:
                 MarkupAttributeError(
                     tag=attrs.tag,
-                    code=MarkupAttributeError.BAD_ATTRIBUTE_VALUE,
+                    errorDef=MarkupAttributeError.BAD_ATTRIBUTE_VALUE,
                     attribute=keyData[0] if keyData else TagAttributesEnum.PADDING[0],
                     attributeData=keyData[1] if keyData else None,
                     attributeGroup=TagAttributesEnum.PADDING,

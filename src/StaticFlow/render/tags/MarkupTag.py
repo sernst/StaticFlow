@@ -279,7 +279,7 @@ class MarkupTag(object):
         except Exception, err:
             MarkupTagError(
                 tag=self,
-                code=MarkupTagError.RENDER_FAILURE
+                errorDef=MarkupTagError.RENDER_FAILURE
             ).log()
             self._log.writeError([
                 'Tag Render failure',
@@ -479,9 +479,7 @@ class MarkupTag(object):
 
 #___________________________________________________________________________________________________ __str__
     def __str__(self):
-        return '<%s [%s:%s]>' % (
-            self.__class__.__name__, self.start(), self.end()
-        )
+        return '[%s %s:%s]' % (self.__class__.__name__, self.start(), self.end())
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -534,8 +532,7 @@ class MarkupTag(object):
                 template=self.renderTemplate,
                 rootPath=StaticFlowEnvironment.rootTemplatePath,
                 data=data,
-                logger=self._log
-            )
+                logger=self._log)
             r.render(
                 tag=self,
                 data=self.attrs,
@@ -628,7 +625,10 @@ class MarkupTag(object):
             rd = self._processor.groups.get(g, None)
             if rd is None:
                 MarkupAttributeError(
-                    code='no-such-group',
+                    errorDef=MarkupTagError.ERROR_DEFINITION_NT(
+                        u'no-such-group',
+                        u'No Such Group',
+                        u'No group tag exists with the given name.'),
                     tag=self,
                     attribute=groupsKey[0],
                     attributeData=groupsKey[1],

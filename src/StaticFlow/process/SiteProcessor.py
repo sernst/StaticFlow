@@ -294,7 +294,8 @@ class SiteProcessor(object):
             SiteProcessUtils.createHeaderFile(destPath, lastModified)
             SiteProcessUtils.copyToCdnFolder(destPath, self, lastModified)
 
-            self._log.write('COPIED: %s -> %s' % (sourcePath, destPath))
+            self._log.write(
+                u'<span style="color:#66AA66;">COPIED: </span> %s -&gt; %s' % (sourcePath, destPath))
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):
