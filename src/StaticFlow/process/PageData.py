@@ -17,6 +17,7 @@ from pyaid.web.mako.MakoRenderer import MakoRenderer
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
 from StaticFlow.process.AuthorData import AuthorData
+from StaticFlow.process.PageProcessUtils import PageProcessUtils
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.rss.RssFileGenerator import RssFileGenerator
 
@@ -43,7 +44,9 @@ class PageData(object):
         self._isProcessed       = False
         self._parentPage        = parentPage
         self._childPages        = []
+        self._referencedPages   = []
         self._rssGenerator      = None
+        self._rssOwners         = []
         self._pageVars          = None
         self._authorData        = None
         self._loadDefinitions()
@@ -56,6 +59,25 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: referencedPages
+    @property
+    def referencedPages(self):
+        return self._referencedPages
+
+#___________________________________________________________________________________________________ GS: rssLinkSource
+    @property
+    def rssLinkSource(self):
+        if self._rssGenerator:
+            return self._rssGenerator
+        if self._rssOwners:
+            return self._rssOwners[0]
+        return None
+
+#___________________________________________________________________________________________________ GS: renderPass
+    @property
+    def renderPass(self):
+        return self.get('RENDER_PASS', 0)
 
 #___________________________________________________________________________________________________ GS: author
     @property
@@ -73,6 +95,9 @@ class PageData(object):
     @property
     def description(self):
         s = self.get('summary')
+        if s:
+            return s
+        s = self.get('description')
         if s:
             return s
         return self.siteData.get('description')
@@ -101,9 +126,6 @@ class PageData(object):
     @property
     def rssGenerator(self):
         return self._rssGenerator
-    @rssGenerator.setter
-    def rssGenerator(self, value):
-        self._rssGenerator = value
 
 #___________________________________________________________________________________________________ GS: parentPage
     @property
@@ -150,8 +172,7 @@ class PageData(object):
     def sourceFolder(self):
         if self.sourcePath:
             return SiteProcessUtils.getFolderParts(
-                self.sourcePath, self.processor.sourceWebRootPath
-            )
+                self.sourcePath, self.processor.sourceWebRootPath)
         return None
 
 #___________________________________________________________________________________________________ GS: date
@@ -177,8 +198,7 @@ class PageData(object):
             self.processor.targetWebRootPath,
             self.sourceFolder,
             self.filename + '.html',
-            isFile=True
-        )
+            isFile=True)
 
 #___________________________________________________________________________________________________ GS: targetUrl
     @property
@@ -254,6 +274,13 @@ class PageData(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
+#___________________________________________________________________________________________________ addRssOwner
+    def addRssOwner(self, rssGenerator):
+        if rssGenerator not in self._rssOwners:
+            self._rssOwners.append(rssGenerator)
+            return True
+        return False
+
 #___________________________________________________________________________________________________ has
     def has(self, key, allowFalse =True):
         out     = self.get(key, self._GET_NULL)
@@ -318,6 +345,31 @@ class PageData(object):
 
 #___________________________________________________________________________________________________ compile
     def compile(self):
+
+        #--- LINK REFERENCES
+        #       Iterate through page references and add them to the list
+        references = self.get('REFERENCES', [])
+        for ref in references:
+            refPath = FileUtils.createPath(self.processor.sourceWebRootPath, ref.lstrip(u'/'))
+            if not os.path.exists(refPath):
+                self.processor.log.write(
+                    u'<span style="#FF9999">ERROR [Invalid References Path]:</span> %s' % refPath)
+                continue
+            if os.path.isfile(refPath):
+                pages = [self.processor.pages.getPageBySourcePath(refPath)]
+            else:
+                pages = self.processor.pages.getPagesInFolder(ref)
+            if not pages:
+                continue
+
+            for page in pages:
+                if page and page not in self._referencedPages:
+                    self._referencedPages.append(page)
+
+        self._referencedPages = PageProcessUtils.sortPagesByDate(
+            pages=self._referencedPages,
+            reverse=True)
+
         for child in self._childPages:
             child.compile()
 

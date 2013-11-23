@@ -27,18 +27,6 @@ class RssFileGenerator(object):
         self._processor = processor
         self._pageData  = pageData
         self._entries   = []
-
-        self._includePaths = []
-        incs = pageData.get(('RSS', 'INCLUDES'))
-        if incs and isinstance(incs, basestring):
-            incs = [incs]
-        for inc in incs:
-            self._includePaths.append(FileUtils.createPath(
-                self._processor.sourceWebRootPath,
-                inc.strip().replace('\\', '/').strip('/').split('/'),
-                isDir=True
-            ))
-
         self._processor.rssGenerators.append(self)
 
 #===================================================================================================
@@ -108,13 +96,21 @@ class RssFileGenerator(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
-#___________________________________________________________________________________________________ addEntry
-    def addEntry(self, pageData):
-        sourcePath = pageData.sourcePath
-        if not sourcePath or not StringUtils.begins(sourcePath, self._includePaths):
-            return False
-        self._entries.append(RssEntry(self._processor, self, pageData))
-        pageData.rssGenerator = self
+#___________________________________________________________________________________________________ hasPage
+    def hasPage(self, pageData):
+        for entry in self._entries:
+            if entry.pageData == pageData:
+                return True
+        return False
+
+#___________________________________________________________________________________________________ populate
+    def populate(self):
+        # Create the entry and add a reference to this generator in the rss owners of the page
+        for page in self._pageData.referencedPages:
+            if not self.hasPage(page):
+                self._entries.append(RssEntry(self._processor, self, page))
+                page.addRssOwner(self)
+
         return True
 
 #___________________________________________________________________________________________________ write

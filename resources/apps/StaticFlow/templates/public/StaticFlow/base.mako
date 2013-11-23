@@ -4,11 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
 
-    % if mr.pageData.rssGenerator:
+    % if mr.pageData.rssLinkSource:
         <link rel="alternate"
               type="application/rss+xml"
-              title="${mr.pageData.rssGenerator.title}"
-              href="${mr.pageData.rssGenerator.rssUrl}"
+              title="${mr.pageData.rssLinkSource.title}"
+              href="${mr.pageData.rssLinkSource.rssUrl}"
         />
     % endif
 

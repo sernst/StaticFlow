@@ -5,6 +5,7 @@
 from pyaid.file.FileUtils import FileUtils
 
 from StaticFlow.process.PageData import PageData
+from StaticFlow.process.PageProcessUtils import PageProcessUtils
 
 #___________________________________________________________________________________________________ PageDataManager
 class PageDataManager(object):
@@ -33,7 +34,14 @@ class PageDataManager(object):
 
 #___________________________________________________________________________________________________ create
     def create(self, definitionPath, **kwargs):
-        page = PageData(self._processor, definitionPath=definitionPath, **kwargs)
+        """ Creates a page from an absolute path to its definition file, adds it to the pages
+            managed, and returns the created page. """
+
+        page = PageData(
+            processor=self._processor,
+            definitionPath=definitionPath,
+            **kwargs)
+
         if page.sourcePath:
             self._pages.append(page)
         else:
@@ -42,19 +50,42 @@ class PageDataManager(object):
 
 #___________________________________________________________________________________________________ process
     def process(self):
-        """Doc..."""
-        for page in self._pages:
-            page.compile()
+        """ Executes the compilation and build processing of all pages managed by this manager,
+            including dynamic page generation for RSS, etc. """
 
-        # Adds pages to their respective RSS generators
+        #--- COLLECT RENDER PASSES
+        #       Create a list of all render passes needed to render the pages. The render pass is
+        #       specified in the definition file for each page in the RENDER_PASS property with a
+        #       default of 0 if not set explicitly.
+        #
+        #       This is a sparse list that is sorted in ascending order so that arbitrarily large
+        #       numbers can be used as desired to keep passes from colliding on accident as page
+        #       count grows.
+        renderPasses = []
         for page in self._pages:
-            if page.rssGenerator:
-                continue
-            for gen in self._processor.rssGenerators:
-                gen.addEntry(page)
+            if page.renderPass not in renderPasses:
+                renderPasses.append(page.renderPass)
+        renderPasses.sort()
 
-        for page in self._pages:
-            page.process()
+        #--- COMPILE PAGES
+        #       Iterate over each render pass and create the pages in that pass
+        for renderPass in renderPasses:
+            for page in self._pages:
+                if page.renderPass == renderPass:
+                    page.compile()
+
+        #--- RSS GENERATION
+        #       Adds pages to their respective RSS generators by using their references
+        for gen in self._processor.rssGenerators:
+            gen.populate()
+
+        #--- PROCESS PAGES
+        #       Iterate over each render pass again and create pages in that pass
+        for renderPass in renderPasses:
+            for page in self._pages:
+                if page.renderPass == renderPass:
+                    page.process()
+
         return True
 
 #___________________________________________________________________________________________________ getPagesInFolder
@@ -67,37 +98,18 @@ class PageDataManager(object):
                 res.append(page)
 
         if dateSort:
-            res = self._sortByDate(res, reverse)
+            res = PageProcessUtils.sortPagesByDate(pages=res, reverse=reverse)
 
         if len(res) > limit > 0:
             res = res[:limit]
         return res
 
-#===================================================================================================
-#                                                                               P R O T E C T E D
-
-#___________________________________________________________________________________________________ _internalMethod
-    def _sortByDate(self, pages, reverse =False):
-        """Doc..."""
-        if len(pages) < 2:
-            return pages
-
-        out = [pages[0]]
-        src = pages[1:]
-        while len(src) > 0:
-            page = src.pop()
-            for i in range(len(out)):
-                if page.date > out[i].date:
-                    continue
-                out.insert(i, page)
-                page = None
-                break
-            if page:
-                out.append(page)
-
-        if reverse:
-            out.reverse()
-        return out
+#___________________________________________________________________________________________________ getPageBySourcePath
+    def getPageBySourcePath(self, sourcePath):
+        for page in self._pages:
+            if page.sourcePath == sourcePath:
+                return page
+        return None
 
 #===================================================================================================
 #                                                                               I N T R I N S I C
