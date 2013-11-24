@@ -2,6 +2,9 @@
 # (C)2012-2013
 # Scott Ernst
 
+from pyaid.string.StringUtils import StringUtils
+
+from StaticFlow.components.LocalImage import LocalImage
 from StaticFlow.render.enum.AlignmentEnum import AlignmentEnum
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.error.MarkupAttributeError import MarkupAttributeError
@@ -33,9 +36,7 @@ class ImageTag(MarkupTag):
     @classmethod
     def getAttributeList(cls):
         t = TagAttributesEnum
-        return MarkupTag.getAttributeList() + t.ALIGNMENT + t.INLINE + t.WIDTH + t.HEIGHT + t.URL \
-            + t.LINKED + t.FIXED + t.TARGET + t.WINDOW_TARGET + t.SHRINK + t.DIRECT \
-            + t.MAX_HEIGHT + t.MAX_WIDE
+        return MarkupTag.getAttributeList() + t.ALIGNMENT + t.WIDTH + t.HEIGHT + t.URL + t.INLINE
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -51,13 +52,13 @@ class ImageTag(MarkupTag):
 
         wide = a.getAsUnit(
             TagAttributesEnum.WIDTH,
-            640,
+            0,
             defaultUnit='px',
             unitType=int)
 
         tall = a.getAsUnit(
             TagAttributesEnum.HEIGHT,
-            360,
+            0,
             defaultUnit='px',
             unitType=int)
 
@@ -65,22 +66,6 @@ class ImageTag(MarkupTag):
             TagAttributesEnum.URL,
             None,
             returnKey=True)
-
-        link = a.getAsBool(
-            TagAttributesEnum.LINKED,
-            None,
-            allowFailure=True)
-
-        target = a.getAsKeyword(
-            TagAttributesEnum.TARGET + TagAttributesEnum.WINDOW_TARGET,
-            None)
-
-        fixed = a.getAsBool(
-            TagAttributesEnum.FIXED,
-            False)
-
-        if link is None:
-            link = a.getAsURL(TagAttributesEnum.LINKED, None)
 
         if not url:
             MarkupAttributeError(
@@ -93,43 +78,29 @@ class ImageTag(MarkupTag):
                 attributeData=urlKeyData[1],
                 attributeGroup=TagAttributesEnum.URL).log()
 
-        w = wide.value
-        h = tall.value
+        #--- LOCAL IMAGE SIZE
+        #       For local images, try to get the size from the image file if it exists
+        if not StringUtils.begins(url, [u'http', u'//']):
+            img = LocalImage(self.processor.page, url)
+            if img.exists:
+                wide.value = img.width
+                tall.value = img.height
 
-        if fixed:
-            a.styles.add({'width':unicode(w) + 'px', 'height':unicode(h) + 'px'})
-            a.settings.add('fixed', 1)
-        else:
-            a.styles.add({'max-width':unicode(w) + 'px', 'max-height':unicode(h) + 'px'}, 'imageBox')
-            a.data.add({'width':unicode(wide), 'height':unicode(tall)})
+        w = wide.value if wide.value > 0 else 640
+        h = tall.value if tall.value > 0 else 360
 
+        #--- HTML ATTRIBUTES ---#
+        a.styles.add({'max-width':unicode(w) + 'px', 'max-height':unicode(h) + 'px'}, 'imageBox')
+        a.data.add({'width':unicode(wide), 'height':unicode(tall)})
         a.data.add('src', url, 'image')
         a.classes.add('sfml-lazyImage', 'image')
         a.classes.add('sfml-imageBox', 'imageBox')
 
-        if target is None:
-            target = '_blank'
-        elif target == 'new':
-            target = '_blank'
-        elif target in ['me', 'self', 'this']:
-            target = '_self'
-        else:
-            target = a.get(TagAttributesEnum.WINDOW_TARGET + TagAttributesEnum.TARGET)
+        if a.getAsBool(TagAttributesEnum.INLINE, False, kwargs, True):
+            a.styles.add({'display':'inline-block'}, 'imageBox')
 
-        if link:
-            out = link if isinstance(link, basestring) else url
-            if target != '_self':
-                out = target + '|' + out
-
-            a.vdata.add('clkr', out)
-            a.addTagClasses('link')
-            a.classes.add('v-transLink')
-
-        if not self.isBlockDisplay:
-            a.addTagClasses('inline')
-
-        #-------------------------------------------------------------------------------------------
-        # ALIGNMENT
+        #--- HORIZONTAL ALIGNMENT
+        #       Set the alignment of the image within the box, which defaults sto center.
         if align == 'r':
             a.styles.add({
                     'text-align':'right',

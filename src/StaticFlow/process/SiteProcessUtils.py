@@ -135,43 +135,41 @@ class SiteProcessUtils(object):
 
 #___________________________________________________________________________________________________ compileCoffeescript
     @classmethod
-    def compileCoffeescript(cls, processor, path):
+    def compileCoffeescript(cls, site, path):
         csPath  = FileUtils.cleanupPath(path, isFile=True)
         outPath = FileUtils.changePathRoot(
-            csPath[:-6] + 'js', processor.sourceWebRootPath, processor.targetWebRootPath)
+            csPath[:-6] + 'js', site.sourceWebRootPath, site.targetWebRootPath)
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
         outDir = os.path.dirname(outPath)
-        result = cls.compileCoffeescriptFile(csPath, outDir, minify=not processor.isLocal)
+        result = cls.compileCoffeescriptFile(csPath, outDir, minify=not site.isLocal)
         if result['code']:
-            processor.log.write(
-                u'<span style="color:#FF9999;">ERROR:</span> [Failed to compile]: ' + unicode(path))
+            site.writeLogError(u'Failed to compile: "%s"' % unicode(path))
             print result
             return False
         else:
-            processor.log.write(
-                u'<span style="color:#66AA66;">COMPILED: </span> %s' % unicode(path))
+            site.writeLogSuccess(u'COMPILED', unicode(path))
 
         lastModified = FileUtils.getUTCModifiedDatetime(csPath)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
-        if processor.isLocal:
+        if site.isLocal:
             return True
 
-        cls.copyToCdnFolder(outPath, processor, lastModified)
-        processor.log.write(u'<span style="color:#66AA66;">COMPRESSED:</span> ' + unicode(outPath))
+        cls.copyToCdnFolder(outPath, site, lastModified)
+        site.writeLogSuccess(u'COMPRESSED', unicode(outPath))
 
         return True
 
 #___________________________________________________________________________________________________ compileCss
     @classmethod
-    def compileCss(cls, processor, path):
+    def compileCss(cls, site, path):
         outPath = FileUtils.changePathRoot(
-            path, processor.sourceWebRootPath, processor.targetWebRootPath)
+            path, site.sourceWebRootPath, site.targetWebRootPath)
         FileUtils.getDirectoryOf(outPath, createIfMissing=True)
 
-        if processor.isLocal:
+        if site.isLocal:
             shutil.copy(path, outPath)
-            processor.log.write(u'<span style="color:#66AA66;">COPIED:</div> ' + unicode(path))
+            site.writeLogSuccess(u'COPIED', unicode(path))
         else:
             cmd = cls.modifyNodeCommand([
                 FileUtils.createPath(
@@ -183,26 +181,26 @@ class SiteProcessUtils(object):
             os.chdir(os.path.dirname(path))
             result = SystemUtils.executeCommand(cmd)
             if result['code']:
-                processor.log.write(unicode(result['error']))
-                processor.log.write(
-                    u'<span style="color:#FF9999;">ERROR</span> [CSS compilation failure]: '
-                    + unicode(path))
+                site.log.write(unicode(result['error']))
+                site.writeLogError(u'CSS compilation failure:', extras={
+                    'PATH':path,
+                    'ERROR':result['error']})
                 os.chdir(iniDirectory)
                 return False
 
-            processor.log.write(u'<span style="color:#66AA66;">COMPRESSED:</span> ' +  unicode(path))
+            site.writeLogSuccess(u'COMPRESSED', unicode(path))
             os.chdir(iniDirectory)
 
         source = FileUtils.getContents(outPath)
         if not source:
             return False
         FileUtils.putContents(
-            cls._CSS_CDN_IMAGE_RE.sub('url(\g<quote>' + processor.cdnRootUrl + '/', source),
+            cls._CSS_CDN_IMAGE_RE.sub('url(\g<quote>' + site.cdnRootUrl + '/', source),
             outPath)
 
         lastModified = FileUtils.getUTCModifiedDatetime(path)
         SiteProcessUtils.createHeaderFile(outPath, lastModified)
-        cls.copyToCdnFolder(outPath, processor, lastModified)
+        cls.copyToCdnFolder(outPath, site, lastModified)
         return True
 
 #___________________________________________________________________________________________________ testFileFilter

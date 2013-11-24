@@ -180,8 +180,8 @@ class SiteProcessor(object):
 #                                                                                     P U B L I C
 
 #___________________________________________________________________________________________________ writeLogError
-    def writeLogError(self, message, extras =None):
-        self.writeLog(u'ERROR', message, extras, color=u'#FF9999')
+    def writeLogError(self, message, extras =None, error =None):
+        self.writeLog(u'ERROR', message, extras, color=u'#FF9999', error=error)
 
 #___________________________________________________________________________________________________ writeLogWarning
     def writeLogWarning(self, message, extras =None):
@@ -192,7 +192,7 @@ class SiteProcessor(object):
         self.writeLog(header, message, extras, color=u'#66AA66')
 
 #___________________________________________________________________________________________________ writeLog
-    def writeLog(self, header, message, extras =None, color =None, backColor =None):
+    def writeLog(self, header, message, extras =None, color =None, backColor =None, error =None):
         if not color:
             color = u'#333333'
         if not backColor:
@@ -213,7 +213,12 @@ class SiteProcessor(object):
                 out += u'<li>%s</li>' % extras
             out += u'</ul>'
 
-        self.log.write(out)
+        out = out.replace(self.sourceWebRootPath, u'/').replace(self.containerPath, u'//')
+
+        if error is None:
+            self.log.write(out)
+        else:
+            self.log.writeError(out, error)
 
 #___________________________________________________________________________________________________ getSiteUrl
     def getSiteUrl(self, uriPath, forceHttp =False, forceHttps =False, forceDeploy =False):
@@ -330,8 +335,7 @@ class SiteProcessor(object):
             SiteProcessUtils.createHeaderFile(destPath, lastModified)
             SiteProcessUtils.copyToCdnFolder(destPath, self, lastModified)
 
-            self._log.write(
-                u'<span style="color:#66AA66;">COPIED: </span> %s -&gt; %s' % (sourcePath, destPath))
+            self.writeLogSuccess(u'COPIED', u'%s -&gt; %s' % (sourcePath, destPath))
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):
@@ -370,7 +374,6 @@ class SiteProcessor(object):
             itemPath     = FileUtils.createPath(directory, item, isFile=True)
             itemDefsPath = itemPath.rsplit('.', 1)[0] + '.def'
             if os.path.exists(itemDefsPath):
-                self._log.write(u'FOLDER[skipped already defs exists]: ' + unicode(item))
                 continue
 
             test = SiteProcessUtils.testFileFilter(

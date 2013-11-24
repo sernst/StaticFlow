@@ -10,7 +10,8 @@ from pyaid.file.FileUtils import FileUtils
 
 #___________________________________________________________________________________________________ LocalImage
 class LocalImage(object):
-    """A class for..."""
+    """ Wrapper class for locally accessible images within the site. Used for quick referencing
+        their various properties. """
 
 #===================================================================================================
 #                                                                                       C L A S S
@@ -23,7 +24,7 @@ class LocalImage(object):
         self._width   = 0
         self._height  = 0
 
-        if not os.path.exists(self.path):
+        if not self.exists:
             return
 
         im = Image.open(self.path)
@@ -31,6 +32,11 @@ class LocalImage(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: exists
+    @property
+    def exists(self):
+        return os.path.exists(self.path)
 
 #___________________________________________________________________________________________________ GS: width
     @property

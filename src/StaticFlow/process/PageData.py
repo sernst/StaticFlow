@@ -598,12 +598,10 @@ class PageData(object):
             # Add the page to the sitemap
             self.processor.sitemap.add(self)
 
-            self._processor.log.write(
-                u'<span style="color:#66AA66;">CREATED: </span> %s -&gt; %s' % (
-                    unicode(self.targetPath),
-                    self.targetUrl) )
+            self.site.writeLogSuccess(
+                u'CREATED', u'%s -&gt; %s' % (unicode(self.targetPath), self.targetUrl) )
         except Exception, err:
-            self._processor.log.writeError(u'HTML Page Creation Error', err)
+            self.site.writeLogError(u'HTML Page Creation Error', err)
             return False
         return True
 
