@@ -36,36 +36,43 @@ class LocalImage(object):
 #___________________________________________________________________________________________________ GS: exists
     @property
     def exists(self):
+        """ Whether or not the image was found to exist at the specified location on disk """
         return os.path.exists(self.path)
 
 #___________________________________________________________________________________________________ GS: width
     @property
     def width(self):
+        """ The width of the image in pixels """
         return self._width
 
 #___________________________________________________________________________________________________ GS: height
     @property
     def height(self):
+        """ The height of the image in pixels """
         return self._height
 
 #___________________________________________________________________________________________________ GS: url
     @property
     def url(self):
+        """ The URL for the image specific to the current type of deployment """
         return self._page.site.getSiteUrl(self.urlPath)
 
 #___________________________________________________________________________________________________ GS: cdnUrl
     @property
     def cdnUrl(self):
+        """ The deployed CDN URL for the image for the current type of deployment """
         return self._page.site.cdnRootUrl + self.urlPath
 
 #___________________________________________________________________________________________________ GS: urlPath
     @property
     def urlPath(self):
+        """ The path portion of the URL for the image """
         return self._urlPath
 
 #___________________________________________________________________________________________________ GS: path
     @property
     def path(self):
+        """ The absolute path of the image on disk """
         return FileUtils.createPath(
             self._page.site.sourceWebRootPath, self.urlPath.lstrip('/'), isFile=True)
 
@@ -74,6 +81,7 @@ class LocalImage(object):
 
 #___________________________________________________________________________________________________ getUrl
     def getUrl(self, forceHttp =False, forceHttps =False, forceDeploy =False):
+        """ Returns the URL for the image formatted according to the specified argument values """
         return self._page.site.getSiteUrl(
             self.urlPath,
             forceHttp=forceHttp,

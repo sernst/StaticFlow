@@ -103,7 +103,7 @@ class ColorTag(MarkupBlockTag):
                 if self._setColor(c, p):
                     return
             except Exception, err:
-                self._processor.log.writeError('ColorTag: %s | %s -> %s' % (p, str(c), str(type(c))), err)
+                self._processor.logger.writeError('ColorTag: %s | %s -> %s' % (p, str(c), str(type(c))), err)
                 a.logAttributeError(p, c) #TODO: This no longer works.
 
 #___________________________________________________________________________________________________ _setColor

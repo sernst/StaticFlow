@@ -181,7 +181,7 @@ class SiteProcessUtils(object):
             os.chdir(os.path.dirname(path))
             result = SystemUtils.executeCommand(cmd)
             if result['code']:
-                site.log.write(unicode(result['error']))
+                site.logger.write(unicode(result['error']))
                 site.writeLogError(u'CSS compilation failure:', extras={
                     'PATH':path,
                     'ERROR':result['error']})

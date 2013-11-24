@@ -20,8 +20,8 @@ from StaticFlow.render.text.MarkupTextBlockUtils import MarkupTextBlockUtils
 
 #___________________________________________________________________________________________________ MarkupProcessor
 class MarkupProcessor(TextAnalyzer):
-    """The MarkupProcessor class is responsible for parsing Vizme Markup Language (Markup) and
-    converting it to HTML for display on the web."""
+    """ The MarkupProcessor class is responsible for parsing Static Flow Markup Language (Markup)
+        and converting it to HTML for display on the web """
 
 #===================================================================================================
 #                                                                                       C L A S S
@@ -35,35 +35,30 @@ class MarkupProcessor(TextAnalyzer):
     _HTML_INSIDE_TAG_PATTERN = re.compile('(?P<tag><[^\s\t\n>/]+[^>]*>)')
 
     _HTML_PRE_TAG_WHITESPACE_PATTERN  = re.compile(
-        '(?P<whitespace>[\s\t\n]+)(?P<tag><[^\n\t\s>]+[^>]*>)'
-    )
+        '(?P<whitespace>[\s\t\n]+)(?P<tag><[^\n\t\s>]+[^>]*>)')
 
     _HTML_POST_TAG_WHITESPACE_PATTERN = re.compile(
-        '(?P<tag><[^\n\t\s>]+[^>]*>)(?P<whitespace>[\s\t\n]+)'
-    )
+        '(?P<tag><[^\n\t\s>]+[^>]*>)(?P<whitespace>[\s\t\n]+)')
 
     _STRIP_WHITESPACE_PATTERN = re.compile('(^[\s\t\n]+|[\s\t\n]+$)')
 
     _UNWANTED_NEWLINE_PATTERN = re.compile(
-        '(?P<close>\[/#[A-Za-z0-9_#]+\])(?P<space>[\s\t\n]+)(?P<open>\[#[A-Za-z0-9_#]+)'
-    )
+        '(?P<close>\[/#[A-Za-z0-9_#]+\])(?P<space>[\s\t\n]+)(?P<open>\[#[A-Za-z0-9_#]+)')
 
     _STRIP_PATTERN = re.compile(
-        '(^[\s\t\n]+)|(^[\n]*<br />[\n]*)|([\s\t\n]+$)|(^[\n]*<br />[\n]*$)'
-    )
+        '(^[\s\t\n]+)|(^[\n]*<br />[\n]*)|([\s\t\n]+$)|(^[\n]*<br />[\n]*$)')
 
     _DIV_LINE_BREAK_PATTERN = re.compile(
-        '(<br />[\s\t\n]*((?=<div)|(?=<script)))|(((?<=</div>)|(?<=</script>))[\s\t\n]*<br />)'
-    )
+        '(<br />[\s\t\n]*((?=<div)|(?=<script)))|(((?<=</div>)|(?<=</script>))[\s\t\n]*<br />)')
 
     _SNIPPET_PATTERN = re.compile('\[#snippet[\s\t\n]+(?P<path>[^\]]+)\]')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, source, **kwargs):
 
-        self.footerDom     = u''
-        self.pageData      = ArgsUtils.get('pageData', None, kwargs)
-        self.pageProcessor = ArgsUtils.get('pageProcessor', None, kwargs)
+        self.footerDom  = u''
+        self.page       = ArgsUtils.get('page', None, kwargs)
+        self.site       = ArgsUtils.get('site', None, kwargs)
 
         self.filePath = ArgsUtils.get('path', None, kwargs)
         self.filename = ArgsUtils.get(
@@ -92,7 +87,7 @@ class MarkupProcessor(TextAnalyzer):
             stripSource=False,
             **kwargs)
 
-        self._log.trace         = True
+        self.logger.trace       = True
         self._result            = None
         self._anchors           = []
         self._tags              = []
@@ -113,15 +108,10 @@ class MarkupProcessor(TextAnalyzer):
 #===================================================================================================
 #                                                                                   G E T / S E T
 
-#___________________________________________________________________________________________________ GS: page
+#___________________________________________________________________________________________________ GS: logger
     @property
-    def page(self):
-        return self.pageData
-
-#___________________________________________________________________________________________________ GS: site
-    @property
-    def site(self):
-        return self.pageProcessor
+    def logger(self):
+        return self._log
 
 #___________________________________________________________________________________________________ GS: metadata
     @property
@@ -297,7 +287,7 @@ class MarkupProcessor(TextAnalyzer):
             self.analyze()
             return self._result
         except Exception, err:
-            self._log.writeError('Markup Conversion Failure', err)
+            self.logger.writeError('Markup Conversion Failure', err)
             MarkupGlobalError(processor=self).log()
             return self._result if self._result else u''
 
@@ -334,9 +324,9 @@ class MarkupProcessor(TextAnalyzer):
 
         print u'\n' + 100*u'-'
         if error:
-            self._log.writeError(s, error)
+            self.logger.writeError(s, error)
         else:
-            self._log.write(s)
+            self.logger.write(s)
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -349,7 +339,7 @@ class MarkupProcessor(TextAnalyzer):
                 break
 
             path = FileUtils.createPath(
-                self.pageProcessor.snippetsPath, result.group('path').strip(), isFile=True)
+                self.site.snippetsPath, result.group('path').strip(), isFile=True)
             if not os.path.exists(path):
                 self._raw = self._raw[:result.start()] + self._raw[result.end():]
                 continue
@@ -382,9 +372,9 @@ class MarkupProcessor(TextAnalyzer):
 
 #___________________________________________________________________________________________________ _parseArgs
     def _parseArgs(self, **kwargs):
-        self.pageProcessor  = ArgsUtils.get('pageProcessor', self.pageProcessor, kwargs)
-        self.pageData       = ArgsUtils.get('pageData', self.pageData, kwargs)
-        self._debug         = ArgsUtils.get('debug', self._debug, kwargs)
+        self.site   = ArgsUtils.get('site', self.site, kwargs)
+        self.page   = ArgsUtils.get('page', self.page, kwargs)
+        self._debug = ArgsUtils.get('debug', self._debug, kwargs)
         self._allowModelCaching = True
 
 #___________________________________________________________________________________________________ _insertImpl
@@ -397,7 +387,7 @@ class MarkupProcessor(TextAnalyzer):
             try:
                 getattr(t, action)()
             except Exception, err:
-                self._log.writeError([errorLabel, 'Tag: ' + str(t)], err)
+                self.logger.writeError([errorLabel, 'Tag: ' + str(t)], err)
                 MarkupTagError(tag=t).log()
 
 #___________________________________________________________________________________________________ _createTags
@@ -406,8 +396,7 @@ class MarkupProcessor(TextAnalyzer):
         for g in self._blocks:
             self.trace(
                 'Processing block',
-                {'Block':g, 'Source':self._result[g.start:min(g.end, g.start + 40)]}
-            )
+                {'Block':g, 'Source':self._result[g.start:min(g.end, g.start + 40)]})
 
             #---------------------------------------------------------------------------------------
             # Markup Open Case:
@@ -421,7 +410,7 @@ class MarkupProcessor(TextAnalyzer):
                     except Exception, err:
                         tagName = u'UNKNOWN'
 
-                    self._log.writeError([
+                    self.logger.writeError([
                         'Failed to create tag',
                         'Block: ' + str(g),
                         'Tag Name: ' + tagName], err)

@@ -2,9 +2,6 @@
 # (C)2013
 # Scott Ernst
 
-import sys
-import getopt
-
 #___________________________________________________________________________________________________ PageProcessUtils
 class PageProcessUtils(object):
     """A class for..."""
@@ -15,8 +12,7 @@ class PageProcessUtils(object):
 #___________________________________________________________________________________________________ sortPagesByDate
     @classmethod
     def sortPagesByDate(cls, pages, reverse =False):
-        """ Sorts the list of pages (made up of PageData instances) in order of their date from
-            oldest to newest unless reversed. """
+        """ Sorts the list of Page in order of their date from oldest to newest unless reversed """
 
         if not pages or len(pages) < 2:
             return pages

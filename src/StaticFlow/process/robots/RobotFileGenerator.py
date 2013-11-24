@@ -16,15 +16,13 @@ class RobotFileGenerator(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor):
-        """Creates a new instance of RobotFileGenerator."""
-        self._processor = processor
+    def __init__(self, site):
+        """ Creates a new instance of RobotFileGenerator """
+        self.site = site
         try:
             self._data = JSON.fromFile(self.definitionPath)
         except Exception, err:
-            self._data = [
-                {'USER_AGENT':'*'}
-            ]
+            self._data = [{'USER_AGENT':'*'}]
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -32,20 +30,20 @@ class RobotFileGenerator(object):
 #___________________________________________________________________________________________________ GS: definitionPath
     @property
     def definitionPath(self):
-        return FileUtils.createPath(self._processor.sourceWebRootPath, '__robots__.def', isFile=True)
+        return FileUtils.createPath(self.site.sourceWebRootPath, '__robots__.def', isFile=True)
 
 #___________________________________________________________________________________________________ GS: targetPath
     @property
     def targetPath(self):
-        return FileUtils.createPath(self._processor.targetWebRootPath, 'robots.txt', isFile=True)
+        return FileUtils.createPath(self.site.targetWebRootPath, 'robots.txt', isFile=True)
 
 #___________________________________________________________________________________________________ GS: targetUrl
     @property
     def targetUrl(self):
-        domain = self._processor.siteData.get('DOMAIN', None)
+        domain = self.site.get('DOMAIN', None)
         if not domain:
             return u''
-        return SiteProcessUtils.getUrlFromPath(self._processor, domain, self.targetPath)
+        return SiteProcessUtils.getUrlFromPath(self.site, domain, self.targetPath)
 
 #===================================================================================================
 #                                                                                     P U B L I C
@@ -65,7 +63,7 @@ class RobotFileGenerator(object):
         for agent in self._data:
             agent = DictUtils.lowerDictKeys(agent)
             out.append(u'user-agent: ' + agent.get('user_agent', u'*'))
-            out.append(u'sitemap: ' + self._processor.sitemap.sitemapTargetUrl)
+            out.append(u'sitemap: ' + self.site.sitemap.sitemapTargetUrl)
         return u'\n'.join(out)
 
 #===================================================================================================

@@ -15,17 +15,17 @@ class AuthorData(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, pageData):
+    def __init__(self, page):
         """Creates a new instance of AuthorData."""
-        self._pageData  = pageData
-        self._id        = pageData.get('AUTHOR')
-        self._data      = None
+        self._page = page
+        self._id   = page.get('AUTHOR')
+        self._data = None
 
         if self._id is None:
             return
 
         authId = self._id.strip().replace(' ', '').lower()
-        self._data = pageData.get(['SITE_AUTHORS', authId])
+        self._data = page.get(['SITE_AUTHORS', authId])
         if self._data is not None:
             self._data = ConfigsDict(self._data)
 

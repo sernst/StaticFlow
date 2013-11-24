@@ -1,4 +1,4 @@
-# PageData.py
+# Page.py
 # (C)2013
 # Scott Ernst
 
@@ -6,14 +6,14 @@ import os
 import datetime
 
 from pyaid.ArgsUtils import ArgsUtils
-from pyaid.NullUtils import NullUtils
 from pyaid.config.ConfigsDict import ConfigsDict
-from pyaid.dict.DictUtils import DictUtils
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
+
+from StaticFlow.components.ConfigsDataComponent import ConfigsDataComponent
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.components.LocalImage import LocalImage
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
@@ -22,25 +22,24 @@ from StaticFlow.process.PageProcessUtils import PageProcessUtils
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.rss.RssFileGenerator import RssFileGenerator
 
-#___________________________________________________________________________________________________ PageData
-class PageData(object):
+#___________________________________________________________________________________________________ Page
+class Page(ConfigsDataComponent):
     """A class for..."""
 
 #===================================================================================================
 #                                                                                       C L A S S
 
-    _GET_NULL = NullUtils.NULL('PAGE_DATA_GET')
-
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor, definitionPath, sourcePath =None, parentPage =None):
-        """Creates a new instance of PageData."""
-        self._processor         = processor
-        self._markupProcessor   = None
+    def __init__(self, site, definitionPath, sourcePath =None, parentPage =None):
+        """Creates a new instance of Page"""
+        super(Page, self).__init__()
+
+        self.markupProcessor    = None
+
+        self._site              = site
         self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
         self._sourcePath        = sourcePath
         self._inheritData       = []
-        self._pageData          = ConfigsDict()
-        self._tempData          = ConfigsDict()
         self._date              = None
         self._isProcessed       = False
         self._parentPage        = parentPage
@@ -51,11 +50,12 @@ class PageData(object):
         self._thumbnail         = None
         self._pageVars          = None
         self._authorData        = None
+
         self._loadDefinitions()
 
         # If an RSS definition exists create an RSS generator
         if self.get('RSS'):
-            self._rssGenerator = RssFileGenerator(processor, self)
+            self._rssGenerator = RssFileGenerator(self)
 
         self._date = FileUtils.getModifiedDatetime(self.sourcePath)
 
@@ -108,21 +108,21 @@ class PageData(object):
         s = self.get('description')
         if s:
             return s
-        return self.siteData.get('description')
+        return self.site.get('description')
 
 #___________________________________________________________________________________________________ GS: footerDom
     @property
     def footerDom(self):
-        if self._markupProcessor is None:
+        if self.markupProcessor is None:
             return u''
-        return self._markupProcessor.footerDom
+        return self.markupProcessor.footerDom
 
 #___________________________________________________________________________________________________ GS: cssTags
     @property
     def cssTags(self):
-        if self._markupProcessor is None:
+        if self.markupProcessor is None:
             return u''
-        css = self._markupProcessor.cssStyles
+        css = self.markupProcessor.cssStyles
         return css if css is not None else u''
 
 #___________________________________________________________________________________________________ GS: pageVars
@@ -185,21 +185,13 @@ class PageData(object):
     def sourceFolder(self):
         if self.sourcePath:
             return SiteProcessUtils.getFolderParts(
-                self.sourcePath, self.processor.sourceWebRootPath)
+                self.sourcePath, self.site.sourceWebRootPath)
         return None
 
 #___________________________________________________________________________________________________ GS: date
     @property
     def date(self):
         return self._date if self._date else datetime.datetime.now()
-
-#___________________________________________________________________________________________________ GS: markupProcessor
-    @property
-    def markupProcessor(self):
-        return self._markupProcessor
-    @markupProcessor.setter
-    def markupProcessor(self, value):
-        self._markupProcessor = value
 
 #___________________________________________________________________________________________________ GS: targetPath
     @property
@@ -208,7 +200,7 @@ class PageData(object):
             return None
 
         return FileUtils.createPath(
-            self.processor.targetWebRootPath,
+            self.site.targetWebRootPath,
             self.sourceFolder,
             self.filename + '.html',
             isFile=True)
@@ -219,7 +211,7 @@ class PageData(object):
         path = self.targetPath
         if not path:
             return None
-        return SiteProcessUtils.getUrlFromPath(self.processor, self.get('DOMAIN'), path)
+        return SiteProcessUtils.getUrlFromPath(self.site, self.get('DOMAIN'), path)
 
 #___________________________________________________________________________________________________ GS: targetUrlLink
     @property
@@ -227,51 +219,17 @@ class PageData(object):
         path = self.targetPath
         if not path:
             return None
-        return u'/' + path[len(self.processor.targetWebRootPath):].replace(u'\\', u'/')
+        return u'/' + path[len(self.site.targetWebRootPath):].replace(u'\\', u'/')
 
 #___________________________________________________________________________________________________ GS: dataSources
     @property
     def dataSources(self):
-        out = [self._tempData, self._pageData] + self._inheritData
-        out.append(self.site.siteData)
-        return out
+        return super(Page, self).dataSources + self._inheritData + self.site.dataSources
 
-#___________________________________________________________________________________________________ GS: processor
-    @property
-    def processor(self):
-        return self._processor
-
-#___________________________________________________________________________________________________ GS: propertyName
+#___________________________________________________________________________________________________ GS: site
     @property
     def site(self):
-        return self._processor
-
-#___________________________________________________________________________________________________ GS: siteData
-    @property
-    def siteData(self):
-        return self.site.siteData
-
-#___________________________________________________________________________________________________ GS: pageData
-    @property
-    def pageData(self):
-        return self._pageData
-    @pageData.setter
-    def pageData(self, value):
-        if isinstance(value, dict):
-            self._pageData.data = value
-        else:
-            self._pageData = value
-
-#___________________________________________________________________________________________________ GS: tempData
-    @property
-    def tempData(self):
-        return self._tempData
-    @tempData.setter
-    def tempData(self, value):
-        if isinstance(value, dict):
-            self._tempData.data = value
-        else:
-            self._tempData = value
+        return self._site
 
 #___________________________________________________________________________________________________ GS: isCompiled
     @property
@@ -280,7 +238,7 @@ class PageData(object):
         if not path:
             return True
 
-        if self._markupProcessor or path.endswith('html'):
+        if self.markupProcessor or path.endswith('html'):
             return True
         return False
 
@@ -299,68 +257,6 @@ class PageData(object):
             return True
         return False
 
-#___________________________________________________________________________________________________ has
-    def has(self, key, allowFalse =True):
-        out     = self.get(key, self._GET_NULL)
-        result  = out != self._GET_NULL
-        if allowFalse:
-            return result
-        return out and result
-
-#___________________________________________________________________________________________________ get
-    def get(self, key, defaultValue =None, **kwargs):
-        if not key:
-            return defaultValue
-        for source in self.dataSources:
-            out = source.get(key, defaultValue=self._GET_NULL)
-            if out != self._GET_NULL:
-                return out
-        return defaultValue
-
-#___________________________________________________________________________________________________ getMerged
-    def getMerged(self, key, defaultValue =None):
-        items = []
-        for source in self.dataSources:
-            res = source.get(key, self._GET_NULL)
-            if res != self._GET_NULL:
-                items.append(res)
-
-        if len(items) == 0:
-            return defaultValue
-
-        if len(items) == 1:
-            return DictUtils.clone(items[0])
-
-        out = items.pop()
-        while len(items):
-            out = DictUtils.merge(out, items.pop())
-        return out
-
-#___________________________________________________________________________________________________ addItem
-    def addItem(self, key, value, page =False):
-        """Doc..."""
-        key = key.lower()
-        if page:
-            self._pageData.add(key, value)
-        else:
-            self._tempData.add(key, value)
-
-#___________________________________________________________________________________________________ addItems
-    def addItems(self, values, page =False):
-        for name, value in values.iteritems():
-            self.addItem(name, value, page=page)
-
-#___________________________________________________________________________________________________ removeItem
-    def removeItem(self, key, page =False, temp =False):
-        key = key.lower()
-        if not page and not temp:
-            temp = True
-
-        if page:
-            self._pageData.remove(key)
-        if temp:
-            self._tempData.remove(key)
-
 #___________________________________________________________________________________________________ compile
     def compile(self):
         """ The compile process links other pages to this page through the references, compiles any
@@ -372,15 +268,14 @@ class PageData(object):
         #       Iterate through page references and add them to the list
         references = self.get('REFERENCES', [])
         for ref in references:
-            refPath = FileUtils.createPath(self.processor.sourceWebRootPath, ref.lstrip(u'/'))
+            refPath = FileUtils.createPath(self.site.sourceWebRootPath, ref.lstrip(u'/'))
             if not os.path.exists(refPath):
-                self.processor.log.write(
-                    u'<span style="#FF9999">ERROR [Invalid References Path]:</span> %s' % refPath)
+                self.site.writeLogError(u'Invalid References Path "%s"' % refPath)
                 continue
             if os.path.isfile(refPath):
-                pages = [self.processor.pages.getPageBySourcePath(refPath)]
+                pages = [self.site.pages.getPageBySourcePath(refPath)]
             else:
-                pages = self.processor.pages.getPagesInFolder(ref)
+                pages = self.site.pages.getPagesInFolder(ref)
             if not pages:
                 continue
 
@@ -436,8 +331,8 @@ class PageData(object):
 
 #___________________________________________________________________________________________________ _getSourceContent
     def _getSourceContent(self):
-        if self._markupProcessor:
-            return self._markupProcessor.get(pageData=self, pageProcessor=self.processor)
+        if self.markupProcessor:
+            return self.markupProcessor.get(page=self, site=self.site)
         elif not self.sourcePath:
             return u''
         return FileUtils.getContents(self.sourcePath)
@@ -450,7 +345,7 @@ class PageData(object):
         # Load page definitions
         if not pageDefsPath or not os.path.exists(pageDefsPath):
             return False
-        self._pageData.data = JSON.fromFile(pageDefsPath)
+        self._data.data = JSON.fromFile(pageDefsPath)
 
         # Load folder level definitions
         folderDefPath = FileUtils.createPath(directory, '__folder__.def', isFile=True)
@@ -466,7 +361,7 @@ class PageData(object):
         steps = []
         while True:
             parentDirectory = FileUtils.createPath(directory, *steps, isDir=True)
-            if parentDirectory == self.processor.containerPath:
+            if parentDirectory == self.site.containerPath:
                 break
             parentPath = parentDirectory + '__parent__.def'
             if os.path.exists(parentPath):
@@ -474,7 +369,7 @@ class PageData(object):
             steps.append('..')
 
         # Create a UID for the page definition if one does not already exist
-        if not self._pageData.get('UID'):
+        if not self._data.get('UID'):
             uid       = []
             uidPrefix = self.get('UID_PREFIX')
             if uidPrefix:
@@ -487,16 +382,16 @@ class PageData(object):
             pathParts.append(self.filename)
             uid.append(u'-'.join(pathParts))
 
-            self._pageData.add('UID', u'_'.join(uid))
-            JSON.toFile(pageDefsPath, self._pageData.data, pretty=True)
+            self._data.add('UID', u'_'.join(uid))
+            JSON.toFile(pageDefsPath, self._data.data, pretty=True)
 
         self._createPageVars()
 
 #___________________________________________________________________________________________________ _createPageVars
     def _createPageVars(self):
         self._pageVars             = self.getMerged('PAGE_VARS', dict())
-        self._pageVars['CDN_ROOT'] = self.processor.cdnRootFolder
-        self._pageVars['CDN_URL']  = self.processor.cdnRootUrl
+        self._pageVars['CDN_ROOT'] = self.site.cdnRootFolder
+        self._pageVars['CDN_URL']  = self.site.cdnRootUrl
 
         out = [
             self._formatPageVarInclude([
@@ -520,11 +415,11 @@ class PageData(object):
 
 #___________________________________________________________________________________________________ _formatPageVarInclude
     def _formatPageVarInclude(self, item):
-        isLocal = self.processor.isLocal
+        isLocal = self.site.isLocal
         out = [item[0]]
         url = item[2] if len(item) == 3 and not isLocal else item[1]
         if not isLocal and url[1] != u'/':
-            url = self.processor.cdnRootUrl + url
+            url = self.site.cdnRootUrl + url
         out.append(url)
         return out
 
@@ -535,13 +430,13 @@ class PageData(object):
             return False
 
         mp = MarkupProcessor(source, path=self.sourcePath)
-        mp.get(pageData=self, pageProcessor=self.processor)
+        mp.get(page=self, site=self.site)
 
-        self._markupProcessor = mp
+        self.markupProcessor = mp
 
         if mp.hasErrors:
             for renderError in mp.renderErrors:
-                self._processor.log.write(
+                self._site.logger.write(
                     u'<hr />' + unicode(renderError.getHtmlLogDisplay()) + u'<br />')
             return False
 
@@ -566,23 +461,23 @@ class PageData(object):
 #___________________________________________________________________________________________________ _createHtmlPage
     def _createHtmlPage(self):
         data = dict(
-            pageProcessor=self.processor,
-            loader=self.processor.cdnRootUrl + u'/js/loader.js',
+            site=self.site,
+            loader=self.site.cdnRootUrl + u'/js/loader.js',
             pageVars=JSON.asString(self._pageVars),
-            pageData=self,
+            page=self,
             htmlSource=self._getSourceContent())
 
         mr = MakoRenderer(
             template=self.get('TEMPLATE'),
             rootPath=[
-                self.processor.htmlTemplatePath,
+                self.site.htmlTemplatePath,
                 StaticFlowEnvironment.rootPublicTemplatePath],
             data=data,
-            minify=not self.processor.isLocal )
+            minify=not self.site.isLocal )
         result = mr.render()
 
         if not mr.success:
-            self._processor.log.write(u'HTML Page Creation Error: ' +  unicode(mr.errorMessage))
+            self._site.logger.write(u'HTML Page Creation Error: ' +  unicode(mr.errorMessage))
             return False
 
         try:
@@ -596,7 +491,7 @@ class PageData(object):
                     FileUtils.getUTCModifiedDatetime(self._definitionPath),
                     FileUtils.getUTCModifiedDatetime(self.sourcePath)] )
             # Add the page to the sitemap
-            self.processor.sitemap.add(self)
+            self.site.sitemap.add(self)
 
             self.site.writeLogSuccess(
                 u'CREATED', u'%s -&gt; %s' % (unicode(self.targetPath), self.targetUrl) )
@@ -605,18 +500,4 @@ class PageData(object):
             return False
         return True
 
-#===================================================================================================
-#                                                                               I N T R I N S I C
-
-#___________________________________________________________________________________________________ __repr__
-    def __repr__(self):
-        return self.__str__()
-
-#___________________________________________________________________________________________________ __unicode__
-    def __unicode__(self):
-        return unicode(self.__str__())
-
-#___________________________________________________________________________________________________ __str__
-    def __str__(self):
-        return '<%s>' % self.__class__.__name__
 

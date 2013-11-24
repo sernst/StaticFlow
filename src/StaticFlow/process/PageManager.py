@@ -1,23 +1,23 @@
-# PageDataManager.py
+# PageManager.py
 # (C)2013
 # Scott Ernst
 
 from pyaid.file.FileUtils import FileUtils
 
-from StaticFlow.process.PageData import PageData
+from StaticFlow.process.Page import Page
 from StaticFlow.process.PageProcessUtils import PageProcessUtils
 
-#___________________________________________________________________________________________________ PageDataManager
-class PageDataManager(object):
+#___________________________________________________________________________________________________ PageManager
+class PageManager(object):
     """A class for..."""
 
 #===================================================================================================
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor):
-        """Creates a new instance of PageDataManager."""
-        self._processor  = processor
+    def __init__(self, site):
+        """ Creates a new instance of PageManager """
+        self._site       = site
         self._pages      = []
         self._emptyPages = []
 
@@ -37,8 +37,8 @@ class PageDataManager(object):
         """ Creates a page from an absolute path to its definition file, adds it to the pages
             managed, and returns the created page. """
 
-        page = PageData(
-            processor=self._processor,
+        page = Page(
+            site=self._site,
             definitionPath=definitionPath,
             **kwargs)
 
@@ -76,7 +76,7 @@ class PageDataManager(object):
 
         #--- RSS GENERATION
         #       Adds pages to their respective RSS generators by using their references
-        for gen in self._processor.rssGenerators:
+        for gen in self._site.rssGenerators:
             gen.populate()
 
         #--- PROCESS PAGES
@@ -92,7 +92,7 @@ class PageDataManager(object):
     def getPagesInFolder(self, folder, dateSort =False, reverse =False, limit =0):
         res  = []
         folder = folder.replace('\\', '/').strip().strip('/').split('/')
-        path = FileUtils.createPath(self._processor.targetWebRootPath, *folder, isDir=True)
+        path = FileUtils.createPath(self._site.targetWebRootPath, *folder, isDir=True)
         for page in self._pages:
             if page.targetPath.startswith(path):
                 res.append(page)

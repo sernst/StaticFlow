@@ -73,7 +73,7 @@ class MarkupTag(object):
                 ArgsUtils.get('attributeSource', u'', kwargs),
                 attributes=attributes)
         else:
-            self._log   = self._processor.log
+            self._log   = self._processor.logger
             start       = self._block.start + (0 if self._procedural else len(self.tagName) + 3)
             self._attrs = AttributeData(
                 self,
@@ -536,8 +536,8 @@ class MarkupTag(object):
             r.render(
                 tag=self,
                 data=self.attrs,
-                pageData=self.processor.pageData,
-                pageProcessor=self.processor.pageProcessor)
+                page=self.processor.page,
+                site=self.processor.site)
         except Exception, err:
             name = self.__class__.__name__
             self.log.writeError([
@@ -556,8 +556,7 @@ class MarkupTag(object):
                 u'TEMPLATE: ' + unicode(self.renderTemplate),
                 u'TAG: ' + unicode(self),
                 u'BLOCK: ' + unicode(self.block),
-                u'DATA: ' + unicode(self.attrs)
-            ])
+                u'DATA: ' + unicode(self.attrs) ])
 
         return r.dom
 

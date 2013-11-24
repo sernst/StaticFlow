@@ -30,7 +30,7 @@ class S3SiteDeployer(object):
 #___________________________________________________________________________________________________ __init__
     def __init__(self, localRootPath, sourceWebRootPath, forceHtml =False, forceAll =False, **kwargs):
         """Creates a new instance of S3SiteDeployer."""
-        self._log               = ArgsUtils.getLogger(self, kwargs)
+        self._logger            = ArgsUtils.getLogger(self, kwargs)
         self._localRootPath     = FileUtils.cleanupPath(localRootPath, isDir=True)
         self._sourceWebRootPath = FileUtils.cleanupPath(sourceWebRootPath, isDir=True)
         self._forceHtml         = forceHtml
@@ -128,7 +128,7 @@ class S3SiteDeployer(object):
                 result = self._bucket.putFile(filename=namePath, **kwargs)
 
             if result:
-                self._log.write(u'DEPLOYED: ' + unicode(namePath) + u'->' + unicode(kwargs['key']))
+                self._logger.write(u'DEPLOYED: ' + unicode(namePath) + u'->' + unicode(kwargs['key']))
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

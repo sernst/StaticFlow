@@ -19,9 +19,9 @@ class SitemapManager(object):
     _TEMPLATE = '/seo/sitemap.mako'
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor):
+    def __init__(self, site):
         """Creates a new instance of SitemapManager."""
-        self._processor = processor
+        self.site = site
         self._entries   = []
 
 #===================================================================================================
@@ -35,23 +35,23 @@ class SitemapManager(object):
 #___________________________________________________________________________________________________ GS: sitemapTargetPath
     @property
     def sitemapTargetPath(self):
-        return FileUtils.createPath(self._processor.targetWebRootPath, 'sitemap.xml', isFile=True)
+        return FileUtils.createPath(self.site.targetWebRootPath, 'sitemap.xml', isFile=True)
 
 #___________________________________________________________________________________________________ GS: sitemapTargetUrl
     @property
     def sitemapTargetUrl(self):
-        domain = self._processor.siteData.get('DOMAIN', None)
+        domain = self.site.get('DOMAIN', None)
         if not domain:
             return u''
-        return SiteProcessUtils.getUrlFromPath(self._processor, domain, self.sitemapTargetPath)
+        return SiteProcessUtils.getUrlFromPath(self.site, domain, self.sitemapTargetPath)
 
 #===================================================================================================
 #                                                                                     P U B L I C
 
 #___________________________________________________________________________________________________ addUrl
-    def add(self, pageData):
+    def add(self, page):
         """Doc..."""
-        self._entries.append(SitemapEntry(self, pageData))
+        self._entries.append(SitemapEntry(self, page))
 
 #___________________________________________________________________________________________________ write
     def write(self):
@@ -59,7 +59,7 @@ class SitemapManager(object):
         result = mr.render()
 
         if not mr.success:
-            self._processor.log.write(u'<span style="color:#66AA66;">ERROR:</span> ' + unicode(mr.errorMessage))
+            self.site.writeLogError(unicode(mr.errorMessage))
             return False
 
         return FileUtils.putContents(result, self.sitemapTargetPath)

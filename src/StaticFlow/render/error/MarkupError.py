@@ -91,8 +91,8 @@ class MarkupError(object):
 #___________________________________________________________________________________________________ echo
     def echo(self):
         data = self.getLogData()
-        if self._processor and self._processor.log.trace:
-            self._processor.log.write(data)
+        if self._processor and self._processor.logger.trace:
+            self._processor.logger.write(data)
         else:
             print data
 
@@ -165,7 +165,7 @@ class MarkupError(object):
             return
 
         if self._verbose:
-            self._processor.log.write(self.getLogData())
+            self._processor.logger.write(self.getLogData())
         self._processor.addRenderError(self)
 
 #===================================================================================================
@@ -219,7 +219,7 @@ class MarkupError(object):
         try:
             s = unicode(markupsafe.escape(s))
         except Exception, err:
-            self._processor.log.writeError([
+            self._processor.logger.writeError([
                 u'Markupsafe escaping failure',
                 u'Source: ' + s
             ], err)
@@ -247,7 +247,7 @@ class MarkupError(object):
                     previousLine = proc.source[index+1:endIndex]
                     endIndex     = index
                 except Exception, err:
-                    proc.log.writeError('Previous line failure', err)
+                    proc.logger.writeError('Previous line failure', err)
                     return out
             elif line == 1:
                 previousLine = proc.source[:endIndex]

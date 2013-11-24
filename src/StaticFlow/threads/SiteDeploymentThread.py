@@ -8,7 +8,7 @@ from pyglass.threading.RemoteExecutionThread import RemoteExecutionThread
 
 from StaticFlow.enum.DeploymentTypeEnum import DeploymentTypeEnum
 from StaticFlow.deploy.S3SiteDeployer import S3SiteDeployer
-from StaticFlow.process.SiteProcessor import SiteProcessor
+from StaticFlow.process.Site import Site
 
 
 #___________________________________________________________________________________________________ SiteDeploymentThread
@@ -39,8 +39,9 @@ class SiteDeploymentThread(RemoteExecutionThread):
     def _runImpl(self):
         """Doc..."""
 
-        #-------------------------------------------------------------------------------------------
-        # EDIT SETTINGS
+        #--- SPECIFY SETTINGS
+        #       Assign process and deploy settings according to the type of deployment enumerated
+        #       when the thread was created
         if self._deployType == DeploymentTypeEnum.TEST_DEPLOY:
             remoteProcess = True
             s3Deploy      = False
@@ -60,13 +61,15 @@ class SiteDeploymentThread(RemoteExecutionThread):
             forceAll      = True
             clean         = False
 
-        #-------------------------------------------------------------------------------------------
-        # PROCESS SITE FILES
-        sp = SiteProcessor(isRemoteDeploy=remoteProcess, containerPath=self._path, logger=self.log)
+        #--- PROCESS SITE FILES
+        #       Compile and process the files to the target location on disk, either in the local
+        #       test folder, or in a temporary folder created in preparation for remote deployment
+        sp = Site(isRemoteDeploy=remoteProcess, containerPath=self._path, logger=self.log)
         sp.run()
 
-        #-------------------------------------------------------------------------------------------
-        # DEPLOY SITE FILES
+        #--- DEPLOY SITE FILES
+        #       For remote deployments, upload all the files created to the S3 bucket where the site
+        #       is deployed.
         try:
             if remoteProcess and s3Deploy:
                 ssd = S3SiteDeployer(
@@ -74,21 +77,20 @@ class SiteDeploymentThread(RemoteExecutionThread):
                     sourceWebRootPath=sp.sourceWebRootPath,
                     forceHtml=forceHtml,
                     forceAll=forceAll,
-                    logger=self.log
-                )
+                    logger=self.log)
                 ssd.deploy()
         except Exception, err:
             sp.cleanup()
-            self.log.writeError('Deployment Failed', err)
+            sp.writeLogError(u'Deployment Failed', error=err)
             return 1
 
-        #---------------------------------------------------------------------------------------------------
-        # REMOVE DEPLOYED FILES
-        self.log.write('TARGET LOCATION: ' + sp.targetWebRootPath)
+
+        #--- REMOVE DEPLOYED FILES
         if clean:
             sp.cleanup()
-            self.log.write('Cleanup process complete')
+            sp.writeLogSuccess(u'CLEANUP', u'Cleanup process complete')
 
-        self.log.write('Operation complete!')
+        sp.writeLog(u'TARGET LOCATION', sp.targetWebRootPath, headerColor=u'#3399FF')
+        self.log.write(u'<span style="font-size:16px;color:#3399FF;">Deployment Complete</span>')
 
         return 0

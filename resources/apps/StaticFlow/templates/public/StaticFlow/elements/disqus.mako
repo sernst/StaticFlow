@@ -1,15 +1,15 @@
-% if mr.pageData.get(('DISQUS', 'SHORT_NAME')):
+% if mr.page.get(('DISQUS', 'SHORT_NAME')):
 <div id="disqus_thread"></div>
 <script type="text/javascript">
-    var disqus_shortname = '${mr.pageData.get(('DISQUS', 'SHORT_NAME'))}';
-    var disqus_url = '${mr.pageData.targetUrl}';
+    var disqus_shortname = '${mr.page.get(('DISQUS', 'SHORT_NAME'))}';
+    var disqus_url = '${mr.page.targetUrl}';
 
     ## Retrieves the DISQUS->UID if one exists or the UID for the page if it does not. If for some
     ## reason there is no UID for the page, the fallback is the URL, as suggested by Disqus.
-    var disqus_identifier = '${mr.pageData.get(('DISQUS', 'UID'), mr.pageData.get('UID', mr.pageData.targetUrl))}';
+    var disqus_identifier = '${mr.page.get(('DISQUS', 'UID'), mr.page.get('UID', mr.page.targetUrl))}';
 
     ## Enables developer mode on local deployments to prevent errors when testing locally
-    % if mr.pageProcessor.isLocal:
+    % if mr.site.isLocal:
         var disqus_developer = 1;
     % endif
 

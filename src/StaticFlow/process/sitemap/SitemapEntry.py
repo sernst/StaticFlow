@@ -16,23 +16,23 @@ class SitemapEntry(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, manager, pageData, **kwargs):
+    def __init__(self, manager, page, **kwargs):
         """Creates a new instance of SitemapEntry."""
-        self._manager      = manager
-        self._pageData     = pageData
-        self._url          = pageData.targetUrl
+        self._manager  = manager
+        self._page     = page
+        self._url      = page.targetUrl
 
         self._frequency    = ArgsUtils.get('frequency', None, kwargs)
         if self._frequency is None:
-            self._frequency = pageData.get(('SEO', 'FREQUENCY'), SitemapFrequencyEnum.WEEKLY)
+            self._frequency = page.get(('SEO', 'FREQUENCY'), SitemapFrequencyEnum.WEEKLY)
 
         self._priority = ArgsUtils.get('priority', None, kwargs)
         if self._priority is None:
-            self._priority = pageData.get(('SEO', 'PRIORITY'), 0.5)
+            self._priority = page.get(('SEO', 'PRIORITY'), 0.5)
 
         self._lastModified = ArgsUtils.get('lastModified', None, kwargs)
         if not self._lastModified:
-            self._lastModified = pageData.date if pageData.date else datetime.datetime.now()
+            self._lastModified = page.date if page.date else datetime.datetime.now()
 
 #===================================================================================================
 #                                                                                   G E T / S E T

@@ -52,8 +52,7 @@ class ListTag(MarkupBlockTag):
     def isOrdered(self):
         return self.attrs.getAsKeyword(
             TagAttributesEnum.TYPE,
-            'bullet'
-        ) != 'bullet'
+            'bullet') != 'bullet'
 
 #___________________________________________________________________________________________________ GS: lineSpacing
     @property
@@ -65,13 +64,13 @@ class ListTag(MarkupBlockTag):
             TagAttributesEnum.LINE_SPACING + TagAttributesEnum.SPACING,
             GeneralSizeEnum,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
+
         if not lineSpacing:
             lineSpacing = self.attrs.getAsUnit(
                 TagAttributesEnum.SPACING + TagAttributesEnum.LINE_SPACING,
-                None
-            )
+                None)
+
             if lineSpacing:
                 lineSpacing = lineSpacing.valueAndUnit
         else:
@@ -82,13 +81,13 @@ class ListTag(MarkupBlockTag):
             elif lineSpacing == GeneralSizeEnum.small[0]:
                 lineSpacing = 1.0
             elif lineSpacing == GeneralSizeEnum.medium[0]:
-                lineSpacing = 1.25
-            elif lineSpacing == GeneralSizeEnum.large[0]:
                 lineSpacing = 1.5
-            elif lineSpacing == GeneralSizeEnum.xlarge[0]:
-                lineSpacing = 1.75
-            elif lineSpacing == GeneralSizeEnum.xxlarge[0]:
+            elif lineSpacing == GeneralSizeEnum.large[0]:
                 lineSpacing = 2.0
+            elif lineSpacing == GeneralSizeEnum.xlarge[0]:
+                lineSpacing = 2.5
+            elif lineSpacing == GeneralSizeEnum.xxlarge[0]:
+                lineSpacing = 3.0
             else:
                 lineSpacing = None
 
@@ -118,7 +117,7 @@ class ListTag(MarkupBlockTag):
             a.attrs.add('start', str(startIndex), a.styleGroup)
 
         if self.lineSpacing:
-            a.styles.add(u'line-height', unicode(self.lineSpacing))
+            a.styles.add(u'line-height', unicode(self.lineSpacing), 'list')
 
         a.render['listTag'] = 'ol' if self.isOrdered else 'ul'
 

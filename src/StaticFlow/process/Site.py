@@ -1,4 +1,4 @@
-# SiteProcessor.py
+# Site.py
 # (C)2013
 # Scott Ernst
 
@@ -15,13 +15,14 @@ from pyaid.system.SystemUtils import SystemUtils
 from pyaid.time.TimeUtils import TimeUtils
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
-from StaticFlow.process.PageDataManager import PageDataManager
+from StaticFlow.components.ConfigsDataComponent import ConfigsDataComponent
+from StaticFlow.process.PageManager import PageManager
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
 from StaticFlow.process.sitemap.SitemapManager import SitemapManager
 
-#___________________________________________________________________________________________________ SiteProcessor
-class SiteProcessor(object):
+#___________________________________________________________________________________________________ Site
+class Site(ConfigsDataComponent):
     """A class for..."""
 
 #===================================================================================================
@@ -35,8 +36,10 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
-        """Creates a new instance of SiteProcessor."""
-        self._log = ArgsUtils.getLogger(self, kwargs)
+        """Creates a new instance of Site."""
+        super(Site, self).__init__()
+
+        self._logger = ArgsUtils.getLogger(self, kwargs)
         self._sourceRootFolderName = sourceRootFolder
 
         # NGinx root path in which all files reside
@@ -57,39 +60,38 @@ class SiteProcessor(object):
         self._localWebRootPath  = FileUtils.createPath(
             containerPath, ArgsUtils.get('localRootFolder', 'root', kwargs), isDir=True)
 
+        path = FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True)
         try:
-            self._siteData = ConfigsDict(JSON.fromFile(
-                FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True) ))
+            self._data.data = JSON.fromFile(path)
         except Exception, err:
-            self._siteData = dict()
+            self.writeLogError(u'Unable to load site definition file: "%s"' % path)
+            pass
 
         # Manages the data for all of the path definitions
-        self._pages         = PageDataManager(self)
+        self._pages         = PageManager(self)
         self._sitemap       = SitemapManager(self)
         self._robots        = RobotFileGenerator(self)
         self._rssGenerators = []
 
-        # Specifies whether the website processing is local or deployed. In the deployed case
+        # Specifies whether the website processing is local or deployed
         self._isLocal = ArgsUtils.get('isLocal', None, kwargs)
 
-        if self.isLocal:
-            self._cdnRootFolder = u''
-        else:
-            self._cdnRootFolder = StaticFlowEnvironment.CDN_ROOT_PREFIX \
-                                  + TimeUtils.getUtcTagTimestamp()
+        self._cdnRootFolder = u'' if self.isLocal else \
+            StaticFlowEnvironment.CDN_ROOT_PREFIX + TimeUtils.getUtcTagTimestamp()
 
 #===================================================================================================
 #                                                                                   G E T / S E T
 
-#___________________________________________________________________________________________________ GS: log
+#___________________________________________________________________________________________________ GS: logger
     @property
-    def log(self):
-        return self._log
+    def logger(self):
+        """ The logger used to report activity during processing """
+        return self._logger
 
 #___________________________________________________________________________________________________ GS: containerPath
     @property
     def containerPath(self):
-        """The Nginx container path where all files and management resides."""
+        """The Nginx container path where all files and management resides """
         return self._containerPath
 
 #___________________________________________________________________________________________________ GS: sourceRootFolderName
@@ -107,7 +109,7 @@ class SiteProcessor(object):
 #___________________________________________________________________________________________________ GS: isLocal
     @property
     def isLocal(self):
-        """Specifies whether or not the processor is deploying locally or remotely"""
+        """Specifies whether or not the site is deploying locally or remotely"""
         if self._isLocal is None:
             return self._targetWebRootPath is None
         return bool(self._isLocal)
@@ -130,11 +132,6 @@ class SiteProcessor(object):
         if self._targetWebRootPath:
             return self._targetWebRootPath
         return self._localWebRootPath
-
-#___________________________________________________________________________________________________ GS: siteData
-    @property
-    def siteData(self):
-        return self._siteData
 
 #___________________________________________________________________________________________________ GS: sitemap
     @property
@@ -161,7 +158,7 @@ class SiteProcessor(object):
     def cdnRootUrl(self):
         if self.isLocal:
             return u''
-        domain = self.siteData.get('CDN_DOMAIN')
+        domain = self.get('CDN_DOMAIN')
         if not domain:
             return u''
         return u'//' + domain + u'/' + self.cdnRootFolder
@@ -171,7 +168,7 @@ class SiteProcessor(object):
     def siteRootUrl(self):
         if self.isLocal:
             return u''
-        domain = self.siteData.get('DOMAIN')
+        domain = self.get('DOMAIN')
         if not domain:
             return u''
         return u'//' + domain
@@ -181,25 +178,40 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ writeLogError
     def writeLogError(self, message, extras =None, error =None):
-        self.writeLog(u'ERROR', message, extras, color=u'#FF9999', error=error)
+        self.writeLog(u'ERROR', message, extras, headerColor=u'#FF9999', error=error, fontSize=16)
 
 #___________________________________________________________________________________________________ writeLogWarning
     def writeLogWarning(self, message, extras =None):
-        self.writeLog(u'WARNING', message, extras, color=u'#999900', backColor=u'#FFFF99')
+        self.writeLog(
+            u'WARNING', message, extras, headerColor=u'#999900', headerBackColor=u'#FFFF99', fontSize=14)
 
 #___________________________________________________________________________________________________ writeLogSuccess
     def writeLogSuccess(self, header, message, extras =None):
-        self.writeLog(header, message, extras, color=u'#66AA66')
+        self.writeLog(
+            header, message, extras, headerColor=u'#66AA66', color=u'#999999')
 
 #___________________________________________________________________________________________________ writeLog
-    def writeLog(self, header, message, extras =None, color =None, backColor =None, error =None):
+    def writeLog(
+            self, header, message, extras =None, headerColor =None, headerBackColor =None,
+            color =None, backColor =None, fontSize =None, error =None
+    ):
+        if not headerColor:
+            headerColor = u'#000000'
+        if not headerBackColor:
+            headerBackColor = u'#FFFFFF'
         if not color:
             color = u'#333333'
         if not backColor:
             backColor = u'#FFFFFF'
+        if not fontSize:
+            fontSize = 11
 
-        out = u'<span style="font-weight:bold;color:%s;background-color:%s">%s:</span> %s' % (
-            color, backColor, header, message)
+        out = u'''<div style="font-size:%spx;color:%s;background-color:%s;"><span
+                style="font-weight:bold;color:%s;background-color:%s;font-size:%spx;">
+                %s:</span> %s''' % (
+            fontSize, color, backColor,
+            headerColor, headerBackColor,
+            fontSize + 2, header, message)
 
         if extras:
             out += u'<ul>'
@@ -212,20 +224,21 @@ class SiteProcessor(object):
             else:
                 out += u'<li>%s</li>' % extras
             out += u'</ul>'
+        out += u'</div>'
 
         out = out.replace(self.sourceWebRootPath, u'/').replace(self.containerPath, u'//')
 
         if error is None:
-            self.log.write(out)
+            self.logger.write(out)
         else:
-            self.log.writeError(out, error)
+            self.logger.writeError(out, error)
 
 #___________________________________________________________________________________________________ getSiteUrl
     def getSiteUrl(self, uriPath, forceHttp =False, forceHttps =False, forceDeploy =False):
         if self.isLocal and not forceDeploy:
             return uriPath
 
-        domain = self.siteData.get('DOMAIN')
+        domain = self.get('DOMAIN')
         if not domain:
             return uriPath
 
@@ -396,7 +409,7 @@ class SiteProcessor(object):
 
 #___________________________________________________________________________________________________ _writeGoogleFiles
     def _writeGoogleFiles(self):
-        vid = self.siteData.get(('GOOGLE', 'SITE_VERIFY_ID'))
+        vid = self.get(('GOOGLE', 'SITE_VERIFY_ID'))
         if not vid:
             return False
 
@@ -408,18 +421,4 @@ class SiteProcessor(object):
         SiteProcessUtils.createHeaderFile(path, None)
         return True
 
-#===================================================================================================
-#                                                                               I N T R I N S I C
-
-#___________________________________________________________________________________________________ __repr__
-    def __repr__(self):
-        return self.__str__()
-
-#___________________________________________________________________________________________________ __unicode__
-    def __unicode__(self):
-        return unicode(self.__str__())
-
-#___________________________________________________________________________________________________ __str__
-    def __str__(self):
-        return '<%s>' % self.__class__.__name__
 

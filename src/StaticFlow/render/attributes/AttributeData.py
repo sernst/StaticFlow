@@ -93,7 +93,7 @@ class AttributeData(DomRenderData):
                 tag=tag,
                 errorDef=MarkupTagError.CORRUPT_ATTRS
             ).log()
-            tag.log.writeError([
+            tag.logger.writeError([
                 'VML ATTRIBUTE PARSE FAILURE',
                 'raw: ' + str(source),
                 'tag: ' + str(tag)
@@ -593,7 +593,7 @@ class AttributeData(DomRenderData):
                     try:
                         return v[0], [k, v[1]]
                     except Exception, err:
-                        self._tag.log.writeError([
+                        self._tag.logger.writeError([
                             u'Failed to return key with data',
                             u'Key: ' + unicode(k),
                             u'Value: ' + unicode(v),
@@ -1268,7 +1268,7 @@ class AttributeData(DomRenderData):
                     tag=self._tag,
                     errorDef=MarkupTagError.CORRUPT_ATTRS
                 ).log()
-                self._tag.log.writeError([
+                self._tag.logger.writeError([
                     'Attribute parsing error',
                     'Default: ' + str(isDefault),
                     'Attr: ' + str(a),

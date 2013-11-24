@@ -12,11 +12,11 @@ class RssEntry(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, processor, generator, pageData):
+    def __init__(self, site, generator, page):
         """Creates a new instance of RssEntry."""
-        self.processor = processor
+        self.site      = site
         self.generator = generator
-        self.pageData  = pageData
+        self.page      = page
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -24,7 +24,7 @@ class RssEntry(object):
 #___________________________________________________________________________________________________ GS: thumbnailUrl
     @property
     def thumbnailUrl(self):
-        thumb = self.pageData.thumbnail
+        thumb = self.page.thumbnail
         if not thumb:
             return None
 
@@ -33,22 +33,22 @@ class RssEntry(object):
 #___________________________________________________________________________________________________ GS: title
     @property
     def title(self):
-        return self.pageData.title
+        return self.page.title
 
 #___________________________________________________________________________________________________ GS: url
     @property
     def url(self):
-        return self.pageData.targetUrl
+        return self.page.targetUrl
 
 #___________________________________________________________________________________________________ GS: description
     @property
     def description(self):
-        return self.pageData.description
+        return self.page.description
 
 #___________________________________________________________________________________________________ GS: date
     @property
     def date(self):
-        return self.pageData.date
+        return self.page.date
 
 #___________________________________________________________________________________________________ GS: publishedDate
     @property
@@ -60,7 +60,7 @@ class RssEntry(object):
 
 #___________________________________________________________________________________________________
     def createThumbnailMediaTag(self):
-        thumb = self.pageData.thumbnail
+        thumb = self.page.thumbnail
         if not thumb:
             return u''
 
