@@ -65,7 +65,8 @@ class SiteDeploymentThread(RemoteExecutionThread):
         #       Compile and process the files to the target location on disk, either in the local
         #       test folder, or in a temporary folder created in preparation for remote deployment
         sp = Site(isRemoteDeploy=remoteProcess, containerPath=self._path, logger=self.log)
-        sp.run()
+        if not sp.run() or sp.errorCount > 0:
+            return 1
 
         #--- DEPLOY SITE FILES
         #       For remote deployments, upload all the files created to the S3 bucket where the site
@@ -84,8 +85,7 @@ class SiteDeploymentThread(RemoteExecutionThread):
             sp.writeLogError(u'Deployment Failed', error=err)
             return 1
 
-
-        #--- REMOVE DEPLOYED FILES
+        #--- REMOVE GENERATED FILES
         if clean:
             sp.cleanup()
             sp.writeLogSuccess(u'CLEANUP', u'Cleanup process complete')

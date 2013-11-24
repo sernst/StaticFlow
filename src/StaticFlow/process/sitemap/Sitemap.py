@@ -1,4 +1,4 @@
-# SitemapManager.py
+# Sitemap.py
 # (C)2013
 # Scott Ernst
 
@@ -9,8 +9,8 @@ from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.process.sitemap.SitemapEntry import SitemapEntry
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 
-#___________________________________________________________________________________________________ SitemapManager
-class SitemapManager(object):
+#___________________________________________________________________________________________________ Sitemap
+class Sitemap(object):
     """A class for..."""
 
 #===================================================================================================
@@ -20,7 +20,7 @@ class SitemapManager(object):
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, site):
-        """Creates a new instance of SitemapManager."""
+        """Creates a new instance of Sitemap."""
         self.site = site
         self._entries   = []
 
@@ -30,31 +30,46 @@ class SitemapManager(object):
 #___________________________________________________________________________________________________ GS: entries
     @property
     def entries(self):
+        """ List of SitemapEntry instances for all the Pages that will be included in the sitemap
+            when generated """
         return self._entries
 
-#___________________________________________________________________________________________________ GS: sitemapTargetPath
+#___________________________________________________________________________________________________ GS: targetPath
     @property
-    def sitemapTargetPath(self):
+    def targetPath(self):
+        """ Absolute path to the location on disk where the generated Sitemap will be written """
         return FileUtils.createPath(self.site.targetWebRootPath, 'sitemap.xml', isFile=True)
 
-#___________________________________________________________________________________________________ GS: sitemapTargetUrl
+#___________________________________________________________________________________________________ GS: targetUrl
     @property
-    def sitemapTargetUrl(self):
+    def targetUrl(self):
+        """ The URL of the sitemap formatted in accordance with the type of site deployment """
         domain = self.site.get('DOMAIN', None)
         if not domain:
             return u''
-        return SiteProcessUtils.getUrlFromPath(self.site, domain, self.sitemapTargetPath)
+        return SiteProcessUtils.getUrlFromPath(self.site, domain, self.targetPath)
 
 #===================================================================================================
 #                                                                                     P U B L I C
 
-#___________________________________________________________________________________________________ addUrl
+#___________________________________________________________________________________________________ has
+    def has(self, page):
+        """ Specifies whether or not the Sitemap has an entry for the page in question """
+        for entry in self._entries:
+            if entry.page == page:
+                return True
+        return False
+
+#___________________________________________________________________________________________________ add
     def add(self, page):
-        """Doc..."""
-        self._entries.append(SitemapEntry(self, page))
+        """ Adds the specified page to the Sitemap's list of entries if it is not already listed """
+        if not self.has(page):
+            self._entries.append(SitemapEntry(self, page))
 
 #___________________________________________________________________________________________________ write
     def write(self):
+        """ Generates the sitemap and writes the result to the targetPath """
+
         mr = MakoRenderer(self._TEMPLATE, StaticFlowEnvironment.rootTemplatePath, {'sitemap':self})
         result = mr.render()
 
@@ -62,7 +77,13 @@ class SitemapManager(object):
             self.site.writeLogError(unicode(mr.errorMessage))
             return False
 
-        return FileUtils.putContents(result, self.sitemapTargetPath)
+        if not FileUtils.putContents(result, self.targetPath):
+            self.site.writeLogError(u'Unable to save sitemap file at: "%s"' % self.targetPath)
+            return False
+
+        self.site.writeLogSuccess(u'SITEMAP', u'Created sitemap at: "%s"' % self.targetPath)
+        return True
+
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

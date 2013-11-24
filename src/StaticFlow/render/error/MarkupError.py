@@ -158,15 +158,9 @@ class MarkupError(object):
 #___________________________________________________________________________________________________ log
     def log(self):
         """Doc..."""
-
-        if not self._processor:
-            print "No processor available to log the error. Error aborted."
-            print self.getLogData()
-            return
-
-        if self._verbose:
-            self._processor.logger.write(self.getLogData())
-        self._processor.addRenderError(self)
+        self.processor.site.errorCount += 1
+        self.processor.addRenderError(self)
+        self.processor.site.logger.write(u'<hr />%s</br />' % (unicode(self.getHtmlLogDisplay())))
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

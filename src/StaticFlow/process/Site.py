@@ -8,6 +8,7 @@ import tempfile
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.config.ConfigsDict import ConfigsDict
+from pyaid.debug.Logger import Logger
 from pyaid.file.FileUtils import FileUtils
 from pyaid.json.JSON import JSON
 from pyaid.string.StringUtils import StringUtils
@@ -19,7 +20,7 @@ from StaticFlow.components.ConfigsDataComponent import ConfigsDataComponent
 from StaticFlow.process.PageManager import PageManager
 from StaticFlow.process.SiteProcessUtils import SiteProcessUtils
 from StaticFlow.process.robots.RobotFileGenerator import RobotFileGenerator
-from StaticFlow.process.sitemap.SitemapManager import SitemapManager
+from StaticFlow.process.sitemap.Sitemap import Sitemap
 
 #___________________________________________________________________________________________________ Site
 class Site(ConfigsDataComponent):
@@ -38,6 +39,9 @@ class Site(ConfigsDataComponent):
     def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
         """Creates a new instance of Site."""
         super(Site, self).__init__()
+
+        self.errorCount   = 0
+        self.warningCount = 0
 
         self._logger = ArgsUtils.getLogger(self, kwargs)
         self._sourceRootFolderName = sourceRootFolder
@@ -69,7 +73,7 @@ class Site(ConfigsDataComponent):
 
         # Manages the data for all of the path definitions
         self._pages         = PageManager(self)
-        self._sitemap       = SitemapManager(self)
+        self._sitemap       = Sitemap(self)
         self._robots        = RobotFileGenerator(self)
         self._rssGenerators = []
 
@@ -177,24 +181,52 @@ class Site(ConfigsDataComponent):
 #                                                                                     P U B L I C
 
 #___________________________________________________________________________________________________ writeLogError
-    def writeLogError(self, message, extras =None, error =None):
-        self.writeLog(u'ERROR', message, extras, headerColor=u'#FF9999', error=error, fontSize=16)
+    def writeLogError(self, message, extras =None, error =None, throw =True):
+        """ Formats and writes the specified error message and data to the log and if critical
+            raises an exception to halt Site generation """
+        self.errorCount += 1
+        self.writeLog(
+            header=u'ERROR',
+            message=message,
+            extras=extras,
+            headerColor=u'#FF9999',
+            error=error,
+            fontSize=16,
+            prefix=u'<br />')
+
+        if throw:
+            if error:
+                raise error
+            else:
+                raise Exception, message
 
 #___________________________________________________________________________________________________ writeLogWarning
     def writeLogWarning(self, message, extras =None):
+        """ Formats and writes the specified warning message and data to the log """
+        self.warningCount += 1
         self.writeLog(
-            u'WARNING', message, extras, headerColor=u'#999900', headerBackColor=u'#FFFF99', fontSize=14)
+            header=u'WARNING',
+            message=message,
+            extras=extras,
+            headerColor=u'#999900',
+            headerBackColor=u'#FFFF99',
+            fontSize=14,
+            prefix=u'<br />')
 
 #___________________________________________________________________________________________________ writeLogSuccess
     def writeLogSuccess(self, header, message, extras =None):
+        """ Formats and writes the specified success action, message, and data to the log """
         self.writeLog(
             header, message, extras, headerColor=u'#66AA66', color=u'#999999')
 
 #___________________________________________________________________________________________________ writeLog
     def writeLog(
             self, header, message, extras =None, headerColor =None, headerBackColor =None,
-            color =None, backColor =None, fontSize =None, error =None
+            color =None, backColor =None, fontSize =None, error =None, prefix =None, suffix =None
     ):
+        """ Formats the specified header and message according to the various formatting arguments
+            and writes resulting message the log """
+
         if not headerColor:
             headerColor = u'#000000'
         if not headerBackColor:
@@ -206,35 +238,65 @@ class Site(ConfigsDataComponent):
         if not fontSize:
             fontSize = 11
 
-        out = u'''<div style="font-size:%spx;color:%s;background-color:%s;"><span
-                style="font-weight:bold;color:%s;background-color:%s;font-size:%spx;">
-                %s:</span> %s''' % (
-            fontSize, color, backColor,
-            headerColor, headerBackColor,
-            fontSize + 2, header, message)
+        # Out is formatted on separate lines because Qt text edit widget requires newlines to
+        # change styles
+        out = [
+            u'<div style="font-size:%spx;color:%s;background-color:%s;">' % (
+                fontSize, color, backColor),
+            u'<span style="font-weight:bold;color:%s;background-color:%s;font-size:%spx;">' % (
+                headerColor, headerBackColor, fontSize + 2),
+            unicode(header) + u': ',
+              u'</span>',
+            unicode(message),
+            u'</div>']
 
+        if prefix:
+            out.insert(0, prefix)
+
+        #--- EXTRAS
+        #       If an extras argument (dict, list, or basestring) was included, format it for
+        #       friendly display
         if extras:
-            out += u'<ul>'
+            out.append(u'<div>\n<ul style="font-size:%spx;color:%s;background-color:%s">' % (
+                fontSize, color, backColor))
+
             if isinstance(extras, list):
                 for item in extras:
-                    out += u'<li>%s</li>' % item
+                    out.append(u'<li>%s</li>' % item)
             elif isinstance(extras, dict):
                 for n,v in extras.iteritems():
-                    out += u'<li><span style="font-weight:bold">%s:</span> %s</li>' % (n, v)
+                    out.append(u'<li><span style="font-weight:bold">%s:</span> %s</li>' % (n, v))
             else:
-                out += u'<li>%s</li>' % extras
-            out += u'</ul>'
-        out += u'</div>'
+                out.append(u'<li>%s</li>' % extras)
+            out.append(u'</ul>\n<div>')
 
-        out = out.replace(self.sourceWebRootPath, u'/').replace(self.containerPath, u'//')
+        #--- ERROR
+        #       Format the error and stack trace for friendly display if present
+        if error:
+            out.append(u'<div style="font-size:14px;color:%s">%s</div>' % (headerColor, error))
+            stack = Logger.getFormattedStackTrace(0, 3)
+            out.extend([
+                u'<br />',
+                u'<div style="font-size:10px;color:#AAAAAA">',
+                u'<span style="font-weight:bold">Thrown At:</span> %s' % stack.replace(
+                    '\n', u'<br />').replace(
+                    '  ', '&nbsp;&nbsp;').replace(
+                    '\t', '&nbsp;&nbsp;&nbsp;&nbsp;'),
+                u'</div>\n<br />'])
 
-        if error is None:
-            self.logger.write(out)
-        else:
-            self.logger.writeError(out, error)
+        if suffix:
+            out.append(suffix)
+
+        # Create final combined string and shorten known paths for compact display
+        out = u'\n'.join(out).replace(
+            self.sourceWebRootPath, u'/').replace(
+            self.containerPath, u'//')
+
+        self.logger.write(out)
 
 #___________________________________________________________________________________________________ getSiteUrl
     def getSiteUrl(self, uriPath, forceHttp =False, forceHttps =False, forceDeploy =False):
+        """ Creates a URL from the specified path """
         if self.isLocal and not forceDeploy:
             return uriPath
 
@@ -248,28 +310,36 @@ class Site(ConfigsDataComponent):
         elif forceHttp:
             protocol = u'http://'
 
-
         sep = u'' if uriPath.startswith(u'/') else u'/'
         return protocol + domain + sep + uriPath
 
 #___________________________________________________________________________________________________ run
     def run(self):
+        """ Executes the site generation process """
         try:
-            self._runImpl()
+            return self._runImpl()
         except Exception, err:
-            self.cleanup()
-            raise
-        return True
+            self.writeLogError(u'Site Generation Failure', error=err, throw=False)
+            try:
+                self.cleanup()
+            except Exception, err:
+                pass
+            return False
 
 #___________________________________________________________________________________________________ cleanup
     def cleanup(self):
+        """ Removes any non-persistent files and folders generated by this Site during the
+            generation process executed by Site.run() """
+
         if self.isLocal or not os.path.exists(self.targetWebRootPath):
-            return False
+            return True
+
         try:
             shutil.rmtree(self.targetWebRootPath)
+            return True
         except Exception, err:
-            raise
-        return True
+            self.writeLogError(u'Site Generation Cleanup Failure', error=err)
+            return False
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -334,6 +404,7 @@ class Site(ConfigsDataComponent):
 
 #___________________________________________________________________________________________________ _copyWalker
     def _copyWalker(self, args, path, names):
+        copiedNames = []
         for item in names:
             if not StringUtils.ends(item, self._FILE_COPY_TYPES):
                 continue
@@ -341,14 +412,26 @@ class Site(ConfigsDataComponent):
             sourcePath = FileUtils.createPath(path, item)
             destPath   = FileUtils.changePathRoot(
                 sourcePath, self.sourceWebRootPath, self.targetWebRootPath)
-            FileUtils.getDirectoryOf(destPath, createIfMissing=True)
-            shutil.copy(sourcePath, destPath)
 
-            lastModified = FileUtils.getUTCModifiedDatetime(sourcePath)
-            SiteProcessUtils.createHeaderFile(destPath, lastModified)
-            SiteProcessUtils.copyToCdnFolder(destPath, self, lastModified)
+            try:
+                FileUtils.getDirectoryOf(destPath, createIfMissing=True)
+                shutil.copy(sourcePath, destPath)
 
-            self.writeLogSuccess(u'COPIED', u'%s -&gt; %s' % (sourcePath, destPath))
+                lastModified = FileUtils.getUTCModifiedDatetime(sourcePath)
+                SiteProcessUtils.createHeaderFile(destPath, lastModified)
+                SiteProcessUtils.copyToCdnFolder(destPath, self, lastModified)
+                copiedNames.append(item)
+            except Exception, err:
+                self.writeLogError(u'Unable to copy file', error=err, extras={
+                    'SOURCE':sourcePath,
+                    'TARGET':destPath })
+                return
+
+        #--- LOG COPIES ---#
+        if copiedNames:
+            self.writeLogSuccess(u'COPIED', u'%s: %s' % (
+                path.rstrip(os.sep),
+                u', '.join(copiedNames)))
 
 #___________________________________________________________________________________________________ _compileWalker
     def _compileWalker(self, args, path, names):

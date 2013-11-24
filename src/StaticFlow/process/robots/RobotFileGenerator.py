@@ -63,7 +63,7 @@ class RobotFileGenerator(object):
         for agent in self._data:
             agent = DictUtils.lowerDictKeys(agent)
             out.append(u'user-agent: ' + agent.get('user_agent', u'*'))
-            out.append(u'sitemap: ' + self.site.sitemap.sitemapTargetUrl)
+            out.append(u'sitemap: ' + self.site.sitemap.targetUrl)
         return u'\n'.join(out)
 
 #===================================================================================================

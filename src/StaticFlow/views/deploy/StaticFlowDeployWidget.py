@@ -7,6 +7,7 @@ from PySide import QtGui
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.list.ListUtils import ListUtils
 
+from pyglass.dialogs.PyGlassBasicDialogManager import PyGlassBasicDialogManager
 from pyglass.elements.buttons.PyGlassPushButton import PyGlassPushButton
 from pyglass.elements.icons.IconSheetMap import IconSheetMap
 from pyglass.enum.SizeEnum import SizeEnum
@@ -110,6 +111,7 @@ class StaticFlowDeployWidget(PyGlassWidget):
     def _handleLogData(self, data):
         self._statusText.append(unicode(data))
         self._statusText.moveCursor(QtGui.QTextCursor.End)
+        self._statusText.moveCursor(QtGui.QTextCursor.StartOfLine)
 
 #___________________________________________________________________________________________________ _handleDeploymentExecutionComplete
     def _handleDeploymentExecutionComplete(self, response):
@@ -117,5 +119,12 @@ class StaticFlowDeployWidget(PyGlassWidget):
         self._serverThread.logSignal.signal.disconnect(self._handleLogData)
         self._serverThread = None
 
-        self.mainWindow.updateStatusBar(u'Deployment complete')
+        if response['response']:
+            PyGlassBasicDialogManager.openOk(
+                parent=self,
+                header=u'Deployment Failed',
+                message=u'An error caused the site deployment to fail')
+            self.mainWindow.updateStatusBar(u'Deployment FAILED')
+        else:
+            self.mainWindow.updateStatusBar(u'Deployment SUCCESS')
         self._closeBtn.setEnabled(True)

@@ -10,71 +10,39 @@ from StaticFlow.process.sitemap.SitemapFrequencyEnum import SitemapFrequencyEnum
 
 #___________________________________________________________________________________________________ SitemapEntry
 class SitemapEntry(object):
-    """A class for..."""
+    """ Represents a page within a sitemap """
 
 #===================================================================================================
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, manager, page, **kwargs):
+    def __init__(self, sitemap, page, **kwargs):
         """Creates a new instance of SitemapEntry."""
-        self._manager  = manager
-        self._page     = page
-        self._url      = page.targetUrl
+        self.sitemap = sitemap
+        self.page    = page
+        self.url     = page.targetUrl
 
-        self._frequency    = ArgsUtils.get('frequency', None, kwargs)
-        if self._frequency is None:
-            self._frequency = page.get(('SEO', 'FREQUENCY'), SitemapFrequencyEnum.WEEKLY)
+        self.changeFrequency = ArgsUtils.get('frequency', None, kwargs)
+        if self.changeFrequency is None:
+            self.changeFrequency = page.get(('SEO', 'FREQUENCY'), SitemapFrequencyEnum.WEEKLY)
 
-        self._priority = ArgsUtils.get('priority', None, kwargs)
-        if self._priority is None:
-            self._priority = page.get(('SEO', 'PRIORITY'), 0.5)
+        self.priority = ArgsUtils.get('priority', None, kwargs)
+        if self.priority is None:
+            self.priority = page.get(('SEO', 'PRIORITY'), 0.5)
 
-        self._lastModified = ArgsUtils.get('lastModified', None, kwargs)
-        if not self._lastModified:
-            self._lastModified = page.date if page.date else datetime.datetime.now()
+        self.lastModified = ArgsUtils.get('lastModified', None, kwargs)
+        if not self.lastModified:
+            self.lastModified = page.date if page.date else datetime.datetime.now()
 
 #===================================================================================================
 #                                                                                   G E T / S E T
 
-#___________________________________________________________________________________________________ GS: url
-    @property
-    def url(self):
-        return self._url
-    @url.setter
-    def url(self, value):
-        self._url = value
-
-#___________________________________________________________________________________________________ GS: lastModified
-    @property
-    def lastModified(self):
-        return self._lastModified
-    @lastModified.setter
-    def lastModified(self, value):
-        self._lastModified = value
-
 #___________________________________________________________________________________________________ GS: lastModifiedTimestamp
     @property
     def lastModifiedTimestamp(self):
-        if not self._lastModified:
+        if not self.lastModified:
             return None
-        return self._lastModified.strftime('%Y-%m-%d')
-
-#___________________________________________________________________________________________________ GS: priority
-    @property
-    def priority(self):
-        return self._priority
-    @priority.setter
-    def priority(self, value):
-        self._priority = value
-
-#___________________________________________________________________________________________________ GS: changeFrequency
-    @property
-    def changeFrequency(self):
-        return self._frequency
-    @changeFrequency.setter
-    def changeFrequency(self, value):
-        self._frequency = value
+        return self.lastModified.strftime('%Y-%m-%d')
 
 #===================================================================================================
 #                                                                               I N T R I N S I C
