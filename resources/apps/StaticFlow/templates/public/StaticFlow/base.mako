@@ -16,7 +16,7 @@
     <meta name="description" content="${mr.pageData.description | n}" />
     <meta property="og:title" content="${mr.pageData.title}" />
     <meta property="og:url" content="${mr.pageData.targetUrl}" />
-    <meta property="og:image" content="${mr.pageProcessor.getSiteUrl(mr.pageData.get('THUMBNAIL'), forceHttp=True)}" />
+    <meta property="og:image" content="${mr.pageData.thumbnail.getUrl(forceHttp=True)}" />
     <meta property="og:description" content="${mr.pageData.description}"/>
     <meta property="og:site_name" content="${mr.pageProcessor.siteData.get('TITLE')}"/>
     <meta property="og:type" content="${mr.pageData.get('TYPE', 'website')}"/>

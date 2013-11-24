@@ -179,6 +179,42 @@ class SiteProcessor(object):
 #===================================================================================================
 #                                                                                     P U B L I C
 
+#___________________________________________________________________________________________________ writeLogError
+    def writeLogError(self, message, extras =None):
+        self.writeLog(u'ERROR', message, extras, color=u'#FF9999')
+
+#___________________________________________________________________________________________________ writeLogWarning
+    def writeLogWarning(self, message, extras =None):
+        self.writeLog(u'WARNING', message, extras, color=u'#999900', backColor=u'#FFFF99')
+
+#___________________________________________________________________________________________________ writeLogSuccess
+    def writeLogSuccess(self, header, message, extras =None):
+        self.writeLog(header, message, extras, color=u'#66AA66')
+
+#___________________________________________________________________________________________________ writeLog
+    def writeLog(self, header, message, extras =None, color =None, backColor =None):
+        if not color:
+            color = u'#333333'
+        if not backColor:
+            backColor = u'#FFFFFF'
+
+        out = u'<span style="font-weight:bold;color:%s;background-color:%s">%s:</span> %s' % (
+            color, backColor, header, message)
+
+        if extras:
+            out += u'<ul>'
+            if isinstance(extras, list):
+                for item in extras:
+                    out += u'<li>%s</li>' % item
+            elif isinstance(extras, dict):
+                for n,v in extras.iteritems():
+                    out += u'<li><span style="font-weight:bold">%s:</span> %s</li>' % (n, v)
+            else:
+                out += u'<li>%s</li>' % extras
+            out += u'</ul>'
+
+        self.log.write(out)
+
 #___________________________________________________________________________________________________ getSiteUrl
     def getSiteUrl(self, uriPath, forceHttp =False, forceHttps =False, forceDeploy =False):
         if self.isLocal and not forceDeploy:

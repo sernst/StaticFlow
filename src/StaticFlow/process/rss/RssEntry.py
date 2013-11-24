@@ -2,11 +2,6 @@
 # (C)2013
 # Scott Ernst
 
-import os
-
-from PIL import Image
-
-from pyaid.file.FileUtils import FileUtils
 from pyaid.time.TimeUtils import TimeUtils
 
 #___________________________________________________________________________________________________ RssEntry
@@ -29,11 +24,11 @@ class RssEntry(object):
 #___________________________________________________________________________________________________ GS: thumbnailUrl
     @property
     def thumbnailUrl(self):
-        path = self.pageData.get('THUMBNAIL')
-        if not path:
+        thumb = self.pageData.thumbnail
+        if not thumb:
             return None
 
-        return self.processor.getSiteUrl(path, forceHttp=True, forceDeploy=True)
+        return thumb.getUrl(forceHttp=True, forceDeploy=True)
 
 #___________________________________________________________________________________________________ GS: title
     @property
@@ -65,20 +60,12 @@ class RssEntry(object):
 
 #___________________________________________________________________________________________________
     def createThumbnailMediaTag(self):
-        url = self.thumbnailUrl
-        if not url:
+        thumb = self.pageData.thumbnail
+        if not thumb:
             return u''
 
-        path = FileUtils.createPath(
-            self.processor.sourceWebRootPath,
-            self.pageData.get('THUMBNAIL').lstrip('/'), isFile=True)
-        if not os.path.exists(path):
-            return u''
-
-        img = Image.open(path)
-        w, h = img.size
-
-        return u'<media:thumbnail url="%s" height="%s" width="%s" />' % (self.thumbnailUrl, w, h)
+        return u'<media:thumbnail url="%s" height="%s" width="%s" />' % (
+            self.thumbnailUrl, thumb.width, thumb.height)
 
 #===================================================================================================
 #                                                                               I N T R I N S I C

@@ -15,6 +15,7 @@ from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
+from StaticFlow.components.LocalImage import LocalImage
 from StaticFlow.render.MarkupProcessor import MarkupProcessor
 from StaticFlow.process.AuthorData import AuthorData
 from StaticFlow.process.PageProcessUtils import PageProcessUtils
@@ -47,6 +48,7 @@ class PageData(object):
         self._referencedPages   = []
         self._rssGenerator      = None
         self._rssOwners         = []
+        self._thumbnail         = None
         self._pageVars          = None
         self._authorData        = None
         self._loadDefinitions()
@@ -59,6 +61,12 @@ class PageData(object):
 
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: thumbnail
+    @property
+    def thumbnail(self):
+        """ LocalImage instance for the page thumbnail if one was specified. """
+        return self._thumbnail
 
 #___________________________________________________________________________________________________ GS: referencedPages
     @property
@@ -154,6 +162,11 @@ class PageData(object):
             return None
         return filename
 
+#___________________________________________________________________________________________________ GS: definitionPath
+    @property
+    def definitionPath(self):
+        return self._definitionPath
+
 #___________________________________________________________________________________________________ GS: sourcePath
     @property
     def sourcePath(self):
@@ -220,7 +233,7 @@ class PageData(object):
     @property
     def dataSources(self):
         out = [self._tempData, self._pageData] + self._inheritData
-        out.append(self.processor.siteData)
+        out.append(self.site.siteData)
         return out
 
 #___________________________________________________________________________________________________ GS: processor
@@ -228,10 +241,15 @@ class PageData(object):
     def processor(self):
         return self._processor
 
+#___________________________________________________________________________________________________ GS: propertyName
+    @property
+    def site(self):
+        return self._processor
+
 #___________________________________________________________________________________________________ GS: siteData
     @property
     def siteData(self):
-        return self._processor.siteData
+        return self.site.siteData
 
 #___________________________________________________________________________________________________ GS: pageData
     @property
@@ -345,6 +363,10 @@ class PageData(object):
 
 #___________________________________________________________________________________________________ compile
     def compile(self):
+        """ The compile process links other pages to this page through the references, compiles any
+            children pages, and then compiles the markup for this page if necessary. Once that is
+            complete the settings affected by the compilation process, e.g. title, description,
+            thumbnail image, etc. are updated in the page in preparation for processing. """
 
         #--- LINK REFERENCES
         #       Iterate through page references and add them to the list
@@ -370,19 +392,35 @@ class PageData(object):
             pages=self._referencedPages,
             reverse=True)
 
+        #--- CHILDREN
+        #       Compile pages marked as children before compiling current page
         for child in self._childPages:
             child.compile()
 
-        if self.isCompiled:
-            return True
+        #--- COMPILE MARKUP
+        #       If this is an SFML file, compile the markup and set the result to True or False
+        #       depending on whether or not the markup compilation process was successful.
+        if not self.isCompiled:
+            path   = self.sourcePath
+            result = self._compileMarkup() if path and path.endswith('.sfml') else True
+        else:
+            result = True
 
-        path = self.sourcePath
-        if path and path.endswith('.sfml'):
-            return self._compileMarkup()
-        return True
+        #--- THUMBNAIL
+        #       Extract thumbnail property if it exists and create LocalImage in response
+        thumbnail = self.get('THUMBNAIL')
+        if thumbnail:
+            self._thumbnail = LocalImage(self, thumbnail)
+        else:
+            self.site.writeWarningLog(u'No thumbnail image for Page "%s"' % self._definitionPath)
+
+        return result
 
 #___________________________________________________________________________________________________ process
     def process(self):
+        """ Processes the previously compiled results and creates the final output html page with
+            all the content and settings. """
+
         for child in self._childPages:
             child.process()
 
