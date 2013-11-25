@@ -326,7 +326,7 @@ class Page(ConfigsDataComponent):
         if thumbnail:
             self._thumbnail = LocalImage(self, thumbnail)
         else:
-            self.site.writeWarningLog(u'No thumbnail image for Page "%s"' % self._definitionPath)
+            self.site.writeLogWarning(u'No thumbnail image for Page "%s"' % self._definitionPath)
 
         return result
 
@@ -455,7 +455,7 @@ class Page(ConfigsDataComponent):
         self._pageVars['SCRIPTS'] = out
 
         #--- CSS INCLUDES ---#
-        out = [self._formatPageVarInclude(['css-staticFlow', '/css/engine.css'])]
+        out = [self._formatPageVarInclude(['css-staticFlow', '/css/sflow/engine.css'])]
         for item in self._pageVars['CSS']:
             out.append(self._formatPageVarInclude(item))
         self._pageVars['CSS'] = out
@@ -522,7 +522,7 @@ class Page(ConfigsDataComponent):
                 StaticFlowEnvironment.rootPublicTemplatePath],
             data=dict(
                 site=self.site,
-                loader=self.site.cdnRootUrl + u'/js/loader.js',
+                loader=self.site.cdnRootUrl + u'/js/sflow/loader.js',
                 pageVars=JSON.asString(self._pageVars),
                 page=self,
                 htmlSource=sourceContent if sourceContent else u''))

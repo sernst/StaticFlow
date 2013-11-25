@@ -16,7 +16,9 @@
     <meta name="description" content="${mr.page.description | n}" />
     <meta property="og:title" content="${mr.page.title}" />
     <meta property="og:url" content="${mr.page.targetUrl}" />
+    % if mr.page.thumbnail:
     <meta property="og:image" content="${mr.page.thumbnail.getUrl(forceHttp=True)}" />
+    % endif
     <meta property="og:description" content="${mr.page.description}"/>
     <meta property="og:site_name" content="${mr.site.get('TITLE')}"/>
     <meta property="og:type" content="${mr.page.get('TYPE', 'website')}"/>

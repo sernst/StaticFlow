@@ -317,6 +317,14 @@ class Site(ConfigsDataComponent):
     def run(self):
         """ Executes the site generation process """
         try:
+            if os.path.exists(self.targetWebRootPath):
+                SystemUtils.remove(self.targetWebRootPath)
+            os.makedirs(self.targetWebRootPath)
+        except Exception, err:
+            self.writeLogError(u'Unable to Remove Existing Deployment', error=err, throw=False)
+            return False
+
+        try:
             return self._runImpl()
         except Exception, err:
             self.writeLogError(u'Site Generation Failure', error=err, throw=False)
