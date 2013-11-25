@@ -48,6 +48,7 @@ sflow.addEventListener = (id, cb, d) ->
         @@@param data:mixed
             Any data to be passed to the callback function when called by the event.
     ###
+    id = id.toLowerCase()
     sf = window.SFLOW
 
     if sf._events[id]
@@ -75,6 +76,7 @@ sflow.removeEventListener = (id, cb) ->
         @@@param callback:function
             The function to remove for the given id.
     ###
+    id = id.toLowerCase()
     e = window.SFLOW._eventCBs
     if not e[id]
         return
@@ -96,9 +98,9 @@ sflow.dispatchEvent = (e) ->
     sf = window.SFLOW
 
     try
-        id = e.id
+        id = e.id.toLowerCase()
     catch err
-        id = e
+        id = e.toLowerCase()
         e  = {id:e}
 
     if e.oneShot

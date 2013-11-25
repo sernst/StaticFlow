@@ -438,16 +438,23 @@ class Page(ConfigsDataComponent):
         self._pageVars['CDN_ROOT'] = self.site.cdnRootFolder
         self._pageVars['CDN_URL']  = self.site.cdnRootUrl
 
-        out = [
-            self._formatPageVarInclude([
-                'jquery',
-                 '/js/ext/jquery/jquery.js',
-                 '//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js' ]),
-            self._formatPageVarInclude(['staticFlow', '/js/engine.js']) ]
+        #--- JS INCLUDE ---#
+        out = [self._formatPageVarInclude(['staticflow', '/js/sflow/engine.js']) ]
+        hasJQuery = False
         for item in self._pageVars['SCRIPTS']:
-            out.append(self._formatPageVarInclude(item))
+            scriptInclude = self._formatPageVarInclude(item)
+            out.append(scriptInclude)
+            hasJQuery = hasJQuery or scriptInclude[0] == 'jquery'
+
+        if not hasJQuery:
+            out.insert(0, self._formatPageVarInclude([
+                'jquery',
+                 '/js/sflow/jquery/jquery.js',
+                 '//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js' ]) )
+
         self._pageVars['SCRIPTS'] = out
 
+        #--- CSS INCLUDES ---#
         out = [self._formatPageVarInclude(['css-staticFlow', '/css/engine.css'])]
         for item in self._pageVars['CSS']:
             out.append(self._formatPageVarInclude(item))
@@ -461,7 +468,7 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ _formatPageVarInclude
     def _formatPageVarInclude(self, item):
         isLocal = self.site.isLocal
-        out = [item[0]]
+        out = [item[0].lower()]
         url = item[2] if len(item) == 3 and not isLocal else item[1]
         if not isLocal and url[1] != u'/':
             url = self.site.cdnRootUrl + url

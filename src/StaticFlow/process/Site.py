@@ -357,22 +357,27 @@ class Site(ConfigsDataComponent):
 
         #--- COMMON FILES ---#
         copies = [
-            ('web/js/loader.js', 'js/loader.js'),
-            ('web/js/engine.js', 'js/engine.js'),
-            ('web/css/engine.css', 'css/engine.css') ]
+            (u'StaticFlow Javascript', 'web/js', 'js/sflow'),
+            (u'StaticFlow CSS', 'web/css', 'css/sflow') ]
 
         for item in copies:
             source = FileUtils.createPath(
-                StaticFlowEnvironment.rootResourcePath, *item[0].split('/'), isFile=True)
+                StaticFlowEnvironment.rootResourcePath, *item[1].split('/'), isDir=True)
             target = FileUtils.createPath(
-                self.targetWebRootPath, *item[1].split('/'), isFile=True)
+                self.targetWebRootPath, *item[2].split('/'), isDir=True)
 
-            targetFolder = os.path.dirname(target)
+            if os.path.exists(target):
+                SystemUtils.remove(target)
+
+            targetFolder = FileUtils.createPath(target, '..', isDir=True)
             if not os.path.exists(targetFolder):
                 os.makedirs(targetFolder)
 
             SystemUtils.copy(source, target)
             SiteProcessUtils.copyToCdnFolder(target, self, FileUtils.getUTCModifiedDatetime(source))
+
+            self.writeLogSuccess(u'COPIED', u'%s | %s -&gt; %s' % (
+                item[0], source.rstrip(os.sep), target.rstrip(os.sep) ))
 
         #-------------------------------------------------------------------------------------------
         # COMPILE
