@@ -481,7 +481,11 @@ class Page(ConfigsDataComponent):
         if source is None:
             return False
 
-        mp = MarkupProcessor(source, path=self.sourcePath)
+        mr = self._renderContent(source=source)
+        if not mr.success:
+            return False
+
+        mp = MarkupProcessor(mr.result, path=self.sourcePath)
         mp.get(page=self, site=self.site)
         if mp.hasErrors:
             raise Exception, u'Markup rendering failed "%s"' % self.sourcePath
@@ -514,24 +518,15 @@ class Page(ConfigsDataComponent):
         else:
             sourceContent = u''
 
-        mr = MakoRenderer(
+        mr = self._renderContent(
             template=self.get('TEMPLATE'),
             minify=not self.site.isLocal,
-            rootPath=[
-                self.site.htmlTemplatePath,
-                StaticFlowEnvironment.rootPublicTemplatePath],
             data=dict(
-                site=self.site,
                 loader=self.site.cdnRootUrl + u'/js/sflow/loader.js',
                 pageVars=JSON.asString(self._pageVars),
-                page=self,
                 htmlSource=sourceContent if sourceContent else u''))
-        result = mr.render()
 
         if not mr.success:
-            self.site.writeLogError(u'Unable to create HTML Page', extras=[
-                u'Page: ' + self.sourcePath,
-                u'Error:' + unicode(mr.errorMessage).replace(u'\n', u'<br />') ])
             return False
 
         try:
@@ -539,7 +534,7 @@ class Page(ConfigsDataComponent):
             if not os.path.exists(outDirectory):
                 os.makedirs(outDirectory)
 
-            FileUtils.putContents(result, self.targetPath, raiseErrors=True)
+            FileUtils.putContents(mr.result, self.targetPath, raiseErrors=True)
             SiteProcessUtils.createHeaderFile(
                 self.targetPath, [
                     FileUtils.getUTCModifiedDatetime(self._definitionPath),
@@ -553,5 +548,37 @@ class Page(ConfigsDataComponent):
             self.site.writeLogError(u'HTML Page Creation Error', err)
             return False
         return True
+
+
+#___________________________________________________________________________________________________ _renderContent
+    def _renderContent(self, source =None, template =None, minify =False, data =None):
+        if source is None and template is None:
+            return None
+
+        if data is None:
+            data = dict()
+
+        data['site'] = self.site
+        data['page'] = self
+
+        mr = MakoRenderer(
+            logger=self.site.logger,
+            source=source,
+            template=template,
+            minify=minify,
+            data=data,
+            rootPath=[
+                self.site.htmlTemplatePath,
+                StaticFlowEnvironment.rootPublicTemplatePath] )
+
+        mr.render()
+
+        if not mr.success:
+            self.site.writeLogError(u'Template rendering failed', extras=[
+                u'Page: ' + self.sourcePath,
+                u'Error:' + unicode(mr.errorMessage).replace(u'\n', u'<br />') ])
+
+        return mr
+
 
 

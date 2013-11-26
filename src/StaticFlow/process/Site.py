@@ -86,6 +86,18 @@ class Site(ConfigsDataComponent):
 #===================================================================================================
 #                                                                                   G E T / S E T
 
+#___________________________________________________________________________________________________ GS: faviconUrl
+    @property
+    def faviconUrl(self):
+        path = FileUtils.createPath(self.sourceWebRootPath, 'favicon.png', isFile=True)
+        if os.path.exists(path):
+            return self.getSiteUrl('favicon.png')
+
+        path = FileUtils.createPath(self.sourceWebRootPath, 'favicon.ico', isFile=True)
+        if os.path.exists(path):
+            return self.getSiteUrl('favicon.ico')
+        return None
+
 #___________________________________________________________________________________________________ GS: logger
     @property
     def logger(self):

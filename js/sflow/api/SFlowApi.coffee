@@ -77,6 +77,8 @@ class SFlowApi
 
         if location.hash.length > 1
             sf.dispatchEvent({id:'PAGE:hashChange', data:location.hash})
+
+        sf.dispatchEvent({id:'API:ready', oneShot:true})
         return
 
 #___________________________________________________________________________________________________ resize

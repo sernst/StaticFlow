@@ -4,12 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
 
+    % if mr.site.faviconUrl:
+        <link rel="icon" href="${mr.site.faviconUrl | n}" />
+    % endif
+
     % if mr.page.rssLinkSource:
         <link rel="alternate"
               type="application/rss+xml"
               title="${mr.page.rssLinkSource.title}"
-              href="${mr.page.rssLinkSource.rssUrl}"
-        />
+              href="${mr.page.rssLinkSource.rssUrl}" />
     % endif
 
     <title>${mr.page.title}</title>
