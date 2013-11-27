@@ -52,7 +52,7 @@ sflow.addEventListener = (id, cb, d) ->
     sf = window.SFLOW
 
     if sf._events[id]
-        cb(sf._events[id], d)
+        cb.apply(window, [sf._events[id], d])
         return
 
     e      = sf._eventCBs
@@ -111,7 +111,7 @@ sflow.dispatchEvent = (e) ->
         return false
 
     for x in cb[id]
-        x.cb(e, x.data)
+        x.cb.apply(window, [e, x.data])
     return true
 
 #___________________________________________________________________________________________________ populateDom

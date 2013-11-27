@@ -17,7 +17,7 @@ class StaticFlowCompiler(PyGlassApplicationCompiler):
 #___________________________________________________________________________________________________ GS: siteLibraries
     @property
     def siteLibraries(self):
-        return [SiteLibraryEnum.PYSIDE]
+        return [SiteLibraryEnum.PYSIDE, SiteLibraryEnum.PYGMENTS]
 
 #___________________________________________________________________________________________________ GS: binPath
     @property

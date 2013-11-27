@@ -33,7 +33,7 @@ class Site(ConfigsDataComponent):
         '.markdown', '.md', '.mdown', '.mkdn', '.mkd', '.coffee', '.blog', '.meta', '.sfml',
         '.sfmlp', '.sfmeta')
 
-    _FILE_COPY_TYPES = ('.js', '.png', '.gif', '.jpg', '.ico')
+    _FILE_COPY_TYPES = ('.js', '.png', '.gif', '.jpg', '.ico', '.map')
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, containerPath, isRemoteDeploy =False, sourceRootFolder ='src', **kwargs):
@@ -91,11 +91,11 @@ class Site(ConfigsDataComponent):
     def faviconUrl(self):
         path = FileUtils.createPath(self.sourceWebRootPath, 'favicon.png', isFile=True)
         if os.path.exists(path):
-            return self.getSiteUrl('favicon.png')
+            return self.getSiteUrl('/favicon.png')
 
         path = FileUtils.createPath(self.sourceWebRootPath, 'favicon.ico', isFile=True)
         if os.path.exists(path):
-            return self.getSiteUrl('favicon.ico')
+            return self.getSiteUrl('/favicon.ico')
         return None
 
 #___________________________________________________________________________________________________ GS: logger
@@ -393,8 +393,10 @@ class Site(ConfigsDataComponent):
             if not os.path.exists(targetFolder):
                 os.makedirs(targetFolder)
 
-            SystemUtils.copy(source, target)
-            SiteProcessUtils.copyToCdnFolder(target, self, FileUtils.getUTCModifiedDatetime(source))
+            fileList = FileUtils.mergeCopy(source, target)
+            for path, data in fileList.files.iteritems():
+                SiteProcessUtils.copyToCdnFolder(
+                    path, self, FileUtils.getUTCModifiedDatetime(source))
 
             self.writeLogSuccess(u'COPIED', u'%s | %s -&gt; %s' % (
                 item[0], source.rstrip(os.sep), target.rstrip(os.sep) ))

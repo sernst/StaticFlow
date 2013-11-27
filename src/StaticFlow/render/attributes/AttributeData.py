@@ -708,10 +708,12 @@ class AttributeData(DomRenderData):
             overrides=overrides,
             extract=extract,
             returnKey=True,
-            allowFailure=allowFailure
-        )
+            allowFailure=allowFailure)
 
         if raw is None:
+            if isinstance(defaultValue, list):
+                defaultValue = defaultValue[0]
+
             if returnKey:
                 return defaultValue, keyData
             return defaultValue

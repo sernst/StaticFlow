@@ -46,7 +46,6 @@ class Page(ConfigsDataComponent):
         self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
         self._sourcePath        = sourcePath
         self._inheritData       = []
-        self._date              = None
         self._isCompiled        = False
         self._isProcessed       = False
         self._thumbnail         = None
@@ -58,8 +57,6 @@ class Page(ConfigsDataComponent):
         # If an RSS definition exists create an RSS generator
         if self.get('RSS') is not None:
             self._rssGenerator = RssFileGenerator(self)
-
-        self._date = FileUtils.getModifiedDatetime(self.sourcePath)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -212,7 +209,13 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: date
     @property
     def date(self):
-        return self._date if self._date else datetime.datetime.now()
+        try:
+            d = self.get('DATE', None)
+            if not d and self.sourcePath:
+                d = FileUtils.getModifiedDatetime(self.sourcePath)
+            return self._parseDate(d)
+        except Exception, err:
+            return datetime.datetime.now()
 
 #___________________________________________________________________________________________________ GS: targetPath
     @property
@@ -491,7 +494,6 @@ class Page(ConfigsDataComponent):
             raise Exception, u'Markup rendering failed "%s"' % self.sourcePath
         self.markupProcessor = mp
 
-        self._date = self._parseDate(ArgsUtils.extract('date', None, mp.metadata))
         self.addItems(mp.metadata)
         return True
 

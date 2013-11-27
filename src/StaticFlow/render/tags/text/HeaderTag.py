@@ -16,7 +16,6 @@ class HeaderTag(MarkupBlockTag):
     TAG            = 'header'
     TEMPLATE       = 'markup/definitions/title.mako'
     BLOCK_DISPLAY  = True
-    LEAF_TAG       = True
     STRIP_POLICY   = MarkupBlockTag.STRIP_ALL
     NEWLINE_POLICY = MarkupBlockTag.REMOVE_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.LEVEL[0]
@@ -51,7 +50,7 @@ class HeaderTag(MarkupBlockTag):
 #___________________________________________________________________________________________________ getAttributeList
     @classmethod
     def getAttributeList(cls):
-        return TagAttributesEnum.LEVEL
+        return MarkupBlockTag.getAttributeList() + TagAttributesEnum.LEVEL
 
 #===================================================================================================
 #                                                                               P R O T E C T E D

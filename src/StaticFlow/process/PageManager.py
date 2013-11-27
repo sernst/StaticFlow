@@ -2,6 +2,7 @@
 # (C)2013
 # Scott Ernst
 
+from pyaid.ArgsUtils import ArgsUtils
 from pyaid.file.FileUtils import FileUtils
 
 from StaticFlow.process.Page import Page
@@ -31,6 +32,37 @@ class PageManager(object):
 
 #===================================================================================================
 #                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ query
+    def query(self, attribute, **kwargs):
+        if 'filter' in kwargs:
+            attrCompareFilter = ArgsUtils.get('filter', None, kwargs)
+            attrExistsFilter  = False
+        else:
+            attrCompareFilter = None
+            attrExistsFilter  = ArgsUtils.get('exists', True, kwargs)
+
+        localOnly = ArgsUtils.get('localOnly', False, kwargs)
+        out       = []
+
+        #--- FILTER
+        #       Filter the pages according to the specified kwargs and the initialization above
+        for page in self._pages:
+            #--- EXISTS FILTER ---#
+            if attrExistsFilter:
+                if page.has(attribute, localOnly=localOnly):
+                    out.append(page)
+                continue
+
+            #--- COMPARE FILTER ---#
+            value = page.get(attribute, defaultValue=ArgsUtils.get('defaultValue', None, kwargs))
+            if value == attrCompareFilter:
+                out.append(page)
+
+        #--- SORTING ---#
+        reverseSort = ArgsUtils.get('reverse', False, kwargs)
+        if ArgsUtils.get('dateSort', False, kwargs):
+            return PageProcessUtils.sortPagesByDate(out, reverse=reverseSort)
 
 #___________________________________________________________________________________________________ create
     def create(self, definitionPath, **kwargs):

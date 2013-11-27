@@ -4,6 +4,7 @@
 
 import re
 
+from StaticFlow.render.enum.GeneralSizeEnum import GeneralSizeEnum
 from StaticFlow.render.enum.AspectRatioEnum import AspectRatioEnum
 from StaticFlow.render.dom.OEmbedRequest import OEmbedRequest
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
@@ -51,7 +52,7 @@ class YouTubeTag(MarkupTag):
     def getAttributeList(cls):
         t = TagAttributesEnum
         return MarkupTag.getAttributeList() + t.URL + t.AUTO_PLAY + t.START + t.TIME \
-               + t.ASPECT_RATIO + t.CODE
+               + t.ASPECT_RATIO + t.CODE + t.SIZE
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -92,6 +93,16 @@ class YouTubeTag(MarkupTag):
         # from a string into a boolean where 'true', 'yes', 'on', and '1' all equate to True and
         # anything else is False.
         play = a.getAsBool(TagAttributesEnum.AUTO_PLAY, False, kwargs)
+
+        size = a.getAsTShirtSize(
+            TagAttributesEnum.SIZE,
+            None,
+            kwargs,
+            allowFailure=True,
+            values=[320, 480, 640, 800, 1024, 1280, 0])
+
+        if size is None:
+            size = a.getAsInt(TagAttributesEnum.SIZE, 0, kwargs)
 
         # Get as enumerated returns an enumerated result based on the enumeration class specified as
         # the second argument. The third argument then becomes the default value to return if the
@@ -204,3 +215,8 @@ class YouTubeTag(MarkupTag):
         # to a particular group.
         a.styles.add('width','100%', 'player')
 
+        if size > 0:
+            a.render['shrink'] = True
+            a.styles.add({'max-width':str(size) + 'px', 'margin':'0 auto'}, 'shrinker')
+        else:
+            a.render['shrink'] = False
