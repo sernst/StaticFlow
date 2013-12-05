@@ -12,7 +12,6 @@ from pyaid.json.JSON import JSON
 from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
-
 from StaticFlow.components.ConfigsDataComponent import ConfigsDataComponent
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
 from StaticFlow.components.LocalImage import LocalImage
@@ -24,14 +23,32 @@ from StaticFlow.process.rss.RssFileGenerator import RssFileGenerator
 
 #___________________________________________________________________________________________________ Page
 class Page(ConfigsDataComponent):
-    """A class for..."""
+    """ Class encapsulation of an HTML web page to be rendered during processing.
+
+        :param site:
+            Site that owns this page.
+        :type site: StaticFlow.process.Site.Site
+
+        :param definitionPath:
+            The absolute path to the definition file (*.def) that defines this page.
+        :type definitionPath: String
+
+        :param sourcePath:
+            The absolute path to the source file (*.sfml or *.html) that will be rendered with this
+            page if one exists, otherwise None.
+        :type sourcePath: String or None
+
+        :param parentPage:
+            A Page instance that is considered the parent to this page if such a relationship
+            exists.
+        :type parentPage: Page or None
+    """
 
 #===================================================================================================
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
     def __init__(self, site, definitionPath, sourcePath =None, parentPage =None):
-        """Creates a new instance of Page"""
         super(Page, self).__init__()
 
         self.markupProcessor = None
@@ -64,19 +81,21 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: thumbnail
     @property
     def thumbnail(self):
-        """ LocalImage instance for the page thumbnail if one was specified. """
+        """ [GET] LocalImage instance for the page thumbnail if one was specified. """
         return self._thumbnail
 
 #___________________________________________________________________________________________________ GS: referencedPages
     @property
     def referencedPages(self):
+        """ [GET] A list of Pages that used in referencing within this Page. The most common example
+            is a page with an rss feed, which includes entries for all referenced pages. """
         return self._referencedPages
 
 #___________________________________________________________________________________________________ GS: rssLinkSource
     @property
     def rssLinkSource(self):
-        """ The RSS generator that should be used to create the HTML link in the Page if such a
-            generator exists for this page, otherwise None """
+        """ [GET] The RSS generator that should be used to create the HTML link in the Page if
+            such a generator exists for this page, otherwise None """
         if self._rssGenerator:
             return self._rssGenerator
         if self._rssOwners:
@@ -86,14 +105,15 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: renderPass
     @property
     def renderPass(self):
-        """ The render pass integer for this page. The smaller the number, the earlier the page
-            will be rendered during compilation and processing phases. The default value is 0 """
+        """ [GET] The render pass integer for this page. The smaller the number, the earlier
+            the page will be rendered during compilation and processing phases. The default
+            value is 0 """
         return self.get('RENDER_PASS', 0)
 
 #___________________________________________________________________________________________________ GS: author
     @property
     def author(self):
-        """ The AuthorData for the Page if one exists """
+        """ [GET] The AuthorData for the Page if one exists """
         if not self._authorData:
             self._authorData = AuthorData(self)
         return self._authorData
@@ -101,13 +121,13 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: title
     @property
     def title(self):
-        """ The title for the Page """
+        """ [GET] The title for the Page """
         return self.get('title')
 
 #___________________________________________________________________________________________________ GS: description
     @property
     def description(self):
-        """ The description for the page """
+        """ [GET] The description for the page """
         s = self.get('summary')
         if s:
             return s
@@ -119,9 +139,9 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: footerDom
     @property
     def footerDom(self):
-        """ The HTML for the footer of the Page, which is added to the page outside of the normal
-            contents of the body to prevent issues with sticky footers It is generated by using
-            the #footer SFML tag """
+        """ [GET] The HTML for the footer of the Page, which is added to the page outside of the
+            normal contents of the body to prevent issues with sticky footers It is generated by
+            using the [#footer] SFML tag """
         if self.markupProcessor is None:
             return u''
         return self.markupProcessor.footerDom
@@ -129,6 +149,8 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: cssTags
     @property
     def cssTags(self):
+        """ [GET] The collected CSS style tags that are to be rendered inline in the head of the
+            page, which are produced during markup processing """
         if self.markupProcessor is None:
             return u''
         css = self.markupProcessor.cssStyles
@@ -137,31 +159,38 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: pageVars
     @property
     def pageVars(self):
-        """ A dictionary of variables that will be written to the html of the generated HTML for
-            access by Javascript within the page during execution """
+        """ [GET} A dictionary of variables that will be written to the html of the generated HTML
+            for access by Javascript within the page during execution """
         return self._pageVars
 
 #___________________________________________________________________________________________________ GS: rssGenerator
     @property
     def rssGenerator(self):
-        """ The RSS generator owned by this page, if one exists, as defined by the RSS section of
-            the Page definition file. Unlike RSS owners, that own pages, this is the RSS generator
-            owned by this page. For example, a blog RSS feed is owned by the blog's home page """
+        """ [GET} The RSS generator owned by this page, if one exists, as defined by the RSS
+            section of the Page definition file. Unlike RSS owners, that own pages, this is the
+            RSS generator owned by this page. For example, a blog RSS feed is owned by the blog's
+            home page """
         return self._rssGenerator
 
 #___________________________________________________________________________________________________ GS: parentPage
     @property
     def parentPage(self):
+        """ [GET] The page that acts as the parent to this page if such a page exists, otherwise
+            None """
         return self._parentPage
 
 #___________________________________________________________________________________________________ GS: childPages
     @property
     def childPages(self):
+        """ [GET] A list of Pages for which this page is the parent """
         return self._childPages
 
 #___________________________________________________________________________________________________ GS: filename
     @property
     def filename(self):
+        """ [GET} The name of the target file for this page, which is determined procedurally if
+            not explicitly set in the definition file's FILE_NAME attribute. Setting this value
+            allows a page to be named differently in the rendered output than in source files. """
         filename = self.get('FILE_NAME')
         if filename is None:
             if self.sourcePath:
@@ -179,13 +208,13 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: definitionPath
     @property
     def definitionPath(self):
-        """ The path to the definition file that defines this Page """
+        """ [GET] The path to the definition file that defines this Page """
         return self._definitionPath
 
 #___________________________________________________________________________________________________ GS: sourcePath
     @property
     def sourcePath(self):
-        """ The path to the content source file, if one exists, for this Page. It can be either an
+        """ [GET] The path to the content source file, if one exists, for this Page. It can be either an
             HTML or an SFML file """
 
         if self._sourcePath:
@@ -201,6 +230,7 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: sourceFolder
     @property
     def sourceFolder(self):
+        """ [GET] Folder where the source file resides """
         if self.sourcePath:
             return SiteProcessUtils.getFolderParts(
                 self.sourcePath, self.site.sourceWebRootPath)
@@ -209,6 +239,8 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: date
     @property
     def date(self):
+        """ [GET] A datetime object that represents the local date at which this file was last
+            modified, or the explicit date as specified in the definition file's DATE property """
         try:
             d = self.get('DATE', None)
             if not d and self.sourcePath:
@@ -220,6 +252,7 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: targetPath
     @property
     def targetPath(self):
+        """ [GET] Absolute path to the location where the Page is written when processed """
         if not self.sourcePath:
             return None
 
@@ -232,6 +265,7 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: targetUrl
     @property
     def targetUrl(self):
+        """ [GET] The absolute URL associated the processed Page """
         path = self.targetPath
         if not path:
             return None
@@ -240,6 +274,7 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: targetUrlLink
     @property
     def targetUrlLink(self):
+        """ [GET] The site URL (relative to the domain root) associated with the processed Page """
         path = self.targetPath
         if not path:
             return None
@@ -248,18 +283,19 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: dataSources
     @property
     def dataSources(self):
+        """ [GET] The list of data sources used to retrieve page attributes ordered by priority """
         return super(Page, self).dataSources + self._inheritData + self.site.dataSources
 
 #___________________________________________________________________________________________________ GS: isCompiled
     @property
     def isCompiled(self):
-        """ Whether or not this page has been compiled """
+        """ [GET] Whether or not this page has been compiled """
         return self._isCompiled
 
 #___________________________________________________________________________________________________ GS: isProcessed
     @property
     def isProcessed(self):
-        """ Whether or not this page has been processed """
+        """ [GET] Whether or not this page has been processed """
         return self._isProcessed
 
 #===================================================================================================
@@ -268,7 +304,11 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ addRssOwner
     def addRssOwner(self, rssGenerator):
         """ Adds the specified RSS generator to the list of RSS generators that has ownership of
-            this page """
+            this page
+
+            :param rssGenerator:
+                The RSS generator that takes ownership for the specified page
+            :type rssGenerator: RssFileGenerator """
 
         if rssGenerator not in self._rssOwners:
             self._rssOwners.append(rssGenerator)
@@ -327,7 +367,7 @@ class Page(ConfigsDataComponent):
         #       Extract thumbnail property if it exists and create LocalImage in response
         thumbnail = self.get('THUMBNAIL')
         if thumbnail:
-            self._thumbnail = LocalImage(self, thumbnail)
+            self._thumbnail = LocalImage(thumbnail, self.site)
         else:
             self.site.writeLogWarning(u'No thumbnail image for Page "%s"' % self._definitionPath)
 

@@ -81,7 +81,7 @@ class ImageTag(MarkupTag):
         #--- LOCAL IMAGE SIZE
         #       For local images, try to get the size from the image file if it exists
         if not StringUtils.begins(url, [u'http', u'//']):
-            img = LocalImage(self.processor.page, url)
+            img = LocalImage(url, self.processor.site)
             if img.exists:
                 wide.value = img.width
                 tall.value = img.height

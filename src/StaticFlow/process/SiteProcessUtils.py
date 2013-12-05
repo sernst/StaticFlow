@@ -15,6 +15,7 @@ from pyaid.system.SystemUtils import SystemUtils
 from pyaid.time.TimeUtils import TimeUtils
 
 from StaticFlow.StaticFlowEnvironment import StaticFlowEnvironment
+from StaticFlow.components.LocalImage import LocalImage
 
 #___________________________________________________________________________________________________ SiteProcessUtils
 class SiteProcessUtils(object):
@@ -24,6 +25,46 @@ class SiteProcessUtils(object):
 #                                                                                       C L A S S
 
     _CSS_CDN_IMAGE_RE = re.compile('url\([\s]*(?P<quote>["\']*)/(?!/)')
+
+#___________________________________________________________________________________________________ createFavicon
+    @classmethod
+    def createFavicon(cls, site):
+        sourceFilename = site.get('FAVICON_SOURCE')
+        if not sourceFilename:
+            return True
+
+        sourcePath = FileUtils.createPath(
+            site.sourceWebRootPath,
+            sourceFilename.strip('/'), isFile=True)
+
+        if not os.path.exists(sourcePath):
+            site.writeLogWarning(u'Favicon source file not found "%s"' % sourceFilename)
+            return False
+
+        img = LocalImage(sourcePath, site)
+        if not img.exists:
+            return False
+
+        targetPath = FileUtils.createPath(site.targetWebRootPath, 'favicon.ico')
+
+        cmd = ['convert', '"%s"' % sourcePath, '-bordercolor', 'white', '-border', '0',
+          '\( -clone 0 -resize 16x16 \)']
+
+        if img.width >= 32:
+          cmd.append('\( -clone 0 -resize 32x32 \)')
+        if img.width >= 48:
+          cmd.append('\( -clone 0 -resize 48x48 \)')
+        if img.width >= 64:
+          cmd.append('\( -clone 0 -resize 64x64 \)')
+
+        cmd.extend(['-delete', '0', '-alpha', 'off', '-colors', '256', '"%s"' % targetPath])
+
+        result = SystemUtils.executeCommand(cmd)
+        if result['code']:
+            site.writeLogWarning(u'Unable to create favicon.ico file')
+            return False
+
+        return True
 
 #___________________________________________________________________________________________________ copyToCdnFolder
     @classmethod

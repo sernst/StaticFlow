@@ -5,6 +5,7 @@
 import os
 import shutil
 import tempfile
+import time
 
 from pyaid.ArgsUtils import ArgsUtils
 from pyaid.config.ConfigsDict import ConfigsDict
@@ -40,8 +41,9 @@ class Site(ConfigsDataComponent):
         """Creates a new instance of Site."""
         super(Site, self).__init__()
 
-        self.errorCount   = 0
-        self.warningCount = 0
+        self.errorCount     = 0
+        self.warningCount   = 0
+        self._staticPaths   = []
 
         self._logger = ArgsUtils.getLogger(self, kwargs)
         self._sourceRootFolderName = sourceRootFolder
@@ -330,10 +332,17 @@ class Site(ConfigsDataComponent):
         """ Executes the site generation process """
         try:
             if os.path.exists(self.targetWebRootPath):
-                SystemUtils.remove(self.targetWebRootPath)
+                if not SystemUtils.remove(self.targetWebRootPath):
+                    # In unsuccessful wait a brief period and try again in case the OS delayed
+                    # the allowance for the removal because of an application conflict
+                    time.sleep(5)
+                    SystemUtils.remove(self.targetWebRootPath, throwError=True)
             os.makedirs(self.targetWebRootPath)
         except Exception, err:
-            self.writeLogError(u'Unable to Remove Existing Deployment', error=err, throw=False)
+            self.writeLogError(
+                u'Unable to Remove Existing Deployment',
+                error=err,
+                throw=False)
             return False
 
         try:
@@ -369,11 +378,16 @@ class Site(ConfigsDataComponent):
         if not os.path.exists(self.targetWebRootPath):
             os.makedirs(self.targetWebRootPath)
 
+        for staticPath in self.get('STATIC_PATHS', []):
+            self._staticPaths.append(FileUtils.createPath(
+                self.sourceWebRootPath,
+                *staticPath.strip(u'/').split(u'/')))
+
         #-------------------------------------------------------------------------------------------
         # COPY FILES
         #       Copies files from the source folders to the target root folder, maintaining folder
         #       structure in the process
-        os.path.walk(self.sourceWebRootPath, self._copyWalker, None)
+        FileUtils.walkPath(self.sourceWebRootPath, self._copyWalker)
 
         #--- COMMON FILES ---#
         copies = [
@@ -430,14 +444,25 @@ class Site(ConfigsDataComponent):
         return True
 
 #___________________________________________________________________________________________________ _copyWalker
-    def _copyWalker(self, args, path, names):
+    def _copyWalker(self, walkData):
+        staticFolder = False
+        for folder in self._staticPaths:
+            path = FileUtils.cleanupPath(walkData.folder, isDir=True)
+            folder = FileUtils.cleanupPath(folder, isDir=True)
+            if path == folder or FileUtils.isInFolder(path, folder):
+                staticFolder = True
+                break
+
         copiedNames = []
-        for item in names:
-            if not StringUtils.ends(item, self._FILE_COPY_TYPES):
+        for item in walkData.names:
+            if not staticFolder and not StringUtils.ends(item, self._FILE_COPY_TYPES):
                 continue
 
-            sourcePath = FileUtils.createPath(path, item)
-            destPath   = FileUtils.changePathRoot(
+            sourcePath = FileUtils.createPath(walkData.folder, item)
+            if os.path.isdir(sourcePath):
+                continue
+
+            destPath = FileUtils.changePathRoot(
                 sourcePath, self.sourceWebRootPath, self.targetWebRootPath)
 
             try:
@@ -457,7 +482,7 @@ class Site(ConfigsDataComponent):
         #--- LOG COPIES ---#
         if copiedNames:
             self.writeLogSuccess(u'COPIED', u'%s: %s' % (
-                path.rstrip(os.sep),
+                walkData.folder.rstrip(os.sep),
                 u', '.join(copiedNames)))
 
 #___________________________________________________________________________________________________ _compileWalker

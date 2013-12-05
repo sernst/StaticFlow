@@ -17,18 +17,24 @@ class LocalImage(object):
 #                                                                                       C L A S S
 
 #___________________________________________________________________________________________________ __init__
-    def __init__(self, page, urlPath):
+    def __init__(self, urlPath, site, page =None):
         """Creates a new instance of LocalImage."""
+        self._site    = site
         self._page    = page
         self._urlPath = urlPath
         self._width   = 0
         self._height  = 0
+        self._isValid = True
 
         if not self.exists:
             return
 
-        im = Image.open(self.path)
-        self._width, self._height = im.size
+        try:
+            im = Image.open(self.path)
+            self._width, self._height = im.size
+        except Exception, err:
+            self._isValid = False
+            site.writeLogWarning(u'Corrupt image file "%s"' % self.path)
 
 #===================================================================================================
 #                                                                                   G E T / S E T
@@ -37,7 +43,7 @@ class LocalImage(object):
     @property
     def exists(self):
         """ Whether or not the image was found to exist at the specified location on disk """
-        return os.path.exists(self.path)
+        return self._isValid and os.path.exists(self.path)
 
 #___________________________________________________________________________________________________ GS: width
     @property
@@ -55,13 +61,13 @@ class LocalImage(object):
     @property
     def url(self):
         """ The URL for the image specific to the current type of deployment """
-        return self._page.site.getSiteUrl(self.urlPath)
+        return self._site.getSiteUrl(self.urlPath)
 
 #___________________________________________________________________________________________________ GS: cdnUrl
     @property
     def cdnUrl(self):
         """ The deployed CDN URL for the image for the current type of deployment """
-        return self._page.site.cdnRootUrl + self.urlPath
+        return self._site.cdnRootUrl + self.urlPath
 
 #___________________________________________________________________________________________________ GS: urlPath
     @property
@@ -74,7 +80,7 @@ class LocalImage(object):
     def path(self):
         """ The absolute path of the image on disk """
         return FileUtils.createPath(
-            self._page.site.sourceWebRootPath, self.urlPath.lstrip('/'), isFile=True)
+            self._site.sourceWebRootPath, self.urlPath.lstrip('/'), isFile=True)
 
 #===================================================================================================
 #                                                                                     P U B L I C
@@ -82,7 +88,7 @@ class LocalImage(object):
 #___________________________________________________________________________________________________ getUrl
     def getUrl(self, forceHttp =False, forceHttps =False, forceDeploy =False):
         """ Returns the URL for the image formatted according to the specified argument values """
-        return self._page.site.getSiteUrl(
+        return self._site.getSiteUrl(
             self.urlPath,
             forceHttp=forceHttp,
             forceHttps=forceHttps,
