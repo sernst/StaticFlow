@@ -244,10 +244,42 @@ class Page(ConfigsDataComponent):
         try:
             d = self.get('DATE', None)
             if not d and self.sourcePath:
-                d = FileUtils.getModifiedDatetime(self.sourcePath)
+                return FileUtils.getModifiedDatetime(self.sourcePath)
             return self._parseDate(d)
         except Exception, err:
             return datetime.datetime.now()
+
+#___________________________________________________________________________________________________ GS: lastModified
+    @property
+    def lastModified(self):
+        """ Gives the most recent time of modification, including checking the modified times of
+            the source and definition files. Unlike the date property, this time reflects any
+            change, and should be used in cases where any change to a file needs to be reflected
+            in the output, e.g. sitemaps. This time will take into account the modified times of
+            children and referenced pages to account for dynamic content changes based on those
+            dependencies. """
+
+        d = self.date
+
+        test = FileUtils.getModifiedDatetime(self.sourcePath)
+        if d < test:
+            d = test
+
+        test = FileUtils.getModifiedDatetime(self.definitionPath)
+        if d < test:
+            d = test
+
+        for child in self._childPages:
+            test = child.lastModified
+            if d < test:
+                d = test
+
+        for ref in self._referencedPages:
+            test = ref.lastModified
+            if d < test:
+                d = test
+
+        return d
 
 #___________________________________________________________________________________________________ GS: targetPath
     @property

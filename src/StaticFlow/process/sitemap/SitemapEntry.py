@@ -2,8 +2,6 @@
 # (C)2013
 # Scott Ernst
 
-import datetime
-
 from pyaid.ArgsUtils import ArgsUtils
 
 from StaticFlow.process.sitemap.SitemapFrequencyEnum import SitemapFrequencyEnum
@@ -21,6 +19,7 @@ class SitemapEntry(object):
         self.sitemap = sitemap
         self.page    = page
         self.url     = page.targetUrl
+        self._data   = kwargs
 
         self.changeFrequency = ArgsUtils.get('frequency', None, kwargs)
         if self.changeFrequency is None:
@@ -30,12 +29,16 @@ class SitemapEntry(object):
         if self.priority is None:
             self.priority = page.get(('SEO', 'PRIORITY'), 0.5)
 
-        self.lastModified = ArgsUtils.get('lastModified', None, kwargs)
-        if not self.lastModified:
-            self.lastModified = page.date if page.date else datetime.datetime.now()
-
 #===================================================================================================
 #                                                                                   G E T / S E T
+
+#___________________________________________________________________________________________________ GS: lastModified
+    @property
+    def lastModified(self):
+        out = ArgsUtils.get('lastModified', None, self._data)
+        if not out:
+            out = self.page.lastModified
+        return out
 
 #___________________________________________________________________________________________________ GS: lastModifiedTimestamp
     @property
