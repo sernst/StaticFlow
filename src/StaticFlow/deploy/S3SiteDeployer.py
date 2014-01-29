@@ -37,10 +37,15 @@ class S3SiteDeployer(object):
         self._forceAll          = forceAll
         self._cdnRootPath       = None
 
-        self._settings = DictUtils.lowerDictKeys(
-            DictUtils.lowerDictKeys(
-                JSON.fromFile(FileUtils.createPath(sourceWebRootPath, '__site__.def', isFile=True))
-            ).get('s3', None))
+        try:
+            siteData = JSON.fromFile(FileUtils.createPath(
+                sourceWebRootPath, '__site__.def', isFile=True), throwError=True)
+        except Exception, err:
+            self._logger.writeError(
+                u'Failed to read __site__.def file. Check to make sure JSON is valid.', err)
+            siteData = {}
+
+        self._settings = DictUtils.lowerDictKeys(DictUtils.lowerDictKeys(siteData).get('s3', None))
 
         self._bucket = S3Bucket(
             self._settings['bucket'],

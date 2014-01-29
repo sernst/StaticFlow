@@ -159,14 +159,14 @@ class Page(ConfigsDataComponent):
 #___________________________________________________________________________________________________ GS: pageVars
     @property
     def pageVars(self):
-        """ [GET} A dictionary of variables that will be written to the html of the generated HTML
+        """ [GET] A dictionary of variables that will be written to the html of the generated HTML
             for access by Javascript within the page during execution """
         return self._pageVars
 
 #___________________________________________________________________________________________________ GS: rssGenerator
     @property
     def rssGenerator(self):
-        """ [GET} The RSS generator owned by this page, if one exists, as defined by the RSS
+        """ [GET] The RSS generator owned by this page, if one exists, as defined by the RSS
             section of the Page definition file. Unlike RSS owners, that own pages, this is the
             RSS generator owned by this page. For example, a blog RSS feed is owned by the blog's
             home page """

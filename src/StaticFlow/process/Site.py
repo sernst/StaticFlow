@@ -68,9 +68,9 @@ class Site(ConfigsDataComponent):
 
         path = FileUtils.createPath(self.sourceWebRootPath, '__site__.def', isFile=True)
         try:
-            self._data.data = JSON.fromFile(path)
+            self._data.data = JSON.fromFile(path, throwError=True)
         except Exception, err:
-            self.writeLogError(u'Unable to load site definition file: "%s"' % path)
+            self.writeLogError(u'Unable to load site definition file: "%s"' % path, error=err)
             pass
 
         # Manages the data for all of the path definitions

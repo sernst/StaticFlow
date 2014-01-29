@@ -61,6 +61,9 @@ class ConfigsDataComponent(object):
         items = []
         sources = self.localDataSources if localOnly else self.dataSources
         for source in sources:
+            if source is None:
+                continue
+
             res = source.get(key, self.DATA_GET_NULL)
             if res != self.DATA_GET_NULL:
                 items.append(res)

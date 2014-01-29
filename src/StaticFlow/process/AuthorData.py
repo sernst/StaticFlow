@@ -82,7 +82,9 @@ class AuthorData(object):
         url = self.gplusAuthorUrl
         if not url:
             return self._id
-        return u'<a href="%s">%s</a>' % (url, self.name if linkContents is None else linkContents)
+
+        return u'<a rel="author" href="%s">%s</a>' % (
+            url, self.name if linkContents is None else linkContents)
 
 #___________________________________________________________________________________________________ exists
     def exists(self):
