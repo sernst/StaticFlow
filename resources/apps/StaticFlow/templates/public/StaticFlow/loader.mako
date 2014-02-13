@@ -1,13 +1,29 @@
 <%inherit file="base.mako" />
 
-<div id="loadBox" style="text-align:center;margin:100px auto;width:50%;min-width:300px;max-width:500px;color:#666;">
-    <div style="font-size:1.6em;">L O A D I N G</div>
-    <div style="padding:2px;margin-top:10px;background-color:#EEE;border:2px solid #666;">
-        <div id="loadProgress" style="background-color:#666;width:1%;height:0.5em;"></div>
-    </div>
-    <div style="margin-top:10px;font-size:1.1em;">${mr.page.description}</div>
-</div>
+<%block name="bottomHead">
+<style>
+    @keyframes loaderBye {
+        from {opacity: 1.0;}
+        to {opacity: 0.0;}
+}
+@-webkit-keyframes loaderBye {
+    from {opacity: 1.0;}
+    to {opacity: 0.0;}
+}
+#loadBox { animation:loaderBy 2s; -webkit-animation: loaderBye 1s;
+    position:absolute;left:0;top:0;width:100%;height:100%;background-color:#FFFFFF;}
+</style>
+</%block>
 
-<div id="mainContainer" style="display:none">
+<div id="loadBox"> </div>
+
+<div id="mainContainer">
     <div id="content">${next.body() | n}</div>
 </div>
+
+<script>
+    function __sfLoad__() {
+        document.getElementById('loadBox').height(window.innerHeight);
+    }
+    __sfLoad__();
+</script>
