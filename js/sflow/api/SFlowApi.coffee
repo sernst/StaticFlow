@@ -99,22 +99,20 @@ class SFlowApi
         # Force Zurb foundation elements to resize in the new DOM once initialized
         dom.find('.columns').resize()
 
-        # Lazy load images
+        #-------------------------------------------------------------------------------------------
+        # LAZY LOAD ELEMENTS
+        #       Elements like images and iframes with lazy load source attributes should be loaded
+        #       during refresh to continue populating page
+        lazyFunc = @_lazyReplacement
         dom.find('img[data-src!=""]').each((index, element) ->
-            e   = $(element)
-            src = e.attr('data-src')
-            e.attr('data-src', null)
-
-            # Skip empty data-src values
-            if not src or src.length == 0
-                return
-
-            # Add CDN prefix to relative URLs
-            if src.substr(0, 2) != '//' and src.substr(0, 4) != 'http'
-                src = PAGE.CDN_URL + src
-
-            e.attr('src', src)
+            lazyFunc(element, 'data-src', 'src')
         )
+
+        dom.find('iframe[data-src!=""]').each((index, element) ->
+            lazyFunc(element, 'data-src', 'src')
+        )
+
+        @_loadDiscus()
 
         # Update the sticky footer
         footerHeight = $('#sf_footer').height()
@@ -122,4 +120,52 @@ class SFlowApi
         $('#sf_wrapper').css('margin-bottom', footerHeight + 'px')
 
         SFLOW.resize(dom)
+        return
+
+#===================================================================================================
+#                                                                               P R O T E C T E D
+
+#___________________________________________________________________________________________________ _lazyReplacement
+    _lazyReplacement: (element, sourceAttr, destAttr) ->
+        e = $(element)
+        src = e.attr(sourceAttr)
+        e.attr(sourceAttr, null)
+
+        # Skip empty data-src values
+        if not src or src.length == 0
+            return
+
+        # Add CDN prefix to relative URLs
+        if src.substr(0, 2) != '//' and src.substr(0, 4) != 'http'
+            src = PAGE.CDN_URL + src
+
+        e.attr(destAttr, src)
+        return
+
+#___________________________________________________________________________________________________ _loadDiscus
+    _loadDiscus: () ->
+        e = $("#disqus_thread")
+        if e.attr('data-rendered')
+            return
+
+        prefix = 'data-discus-'
+        e.attr('data-rendered', 1)
+
+        sn = e.attr(prefix + 'shortname')
+        url = e.attr(prefix + 'url')
+        id = e.attr(prefix + 'id')
+        local = e.attr(prefix + 'local')
+
+        script = "<script type=\"text/javascript\">" \
+            + "\nvar disqus_shortname = \"#{sn}\";" \
+            + "\nvar disqus_url = \"#{url}\";" \
+            + "\nvar disqus_identifier = \"#{id}\";" \
+            + "\nvar disqus_developer = #{local};" \
+            + "\n(function() {" \
+            + "\nvar dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;" \
+            + "\ndsq.src = '//' + \"#{sn}\" + '.disqus.com/embed.js';" \
+            + "\n(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq); })();" \
+            + "\n</script>"
+
+        e.append(script)
         return

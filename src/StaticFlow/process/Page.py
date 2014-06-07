@@ -310,7 +310,11 @@ class Page(ConfigsDataComponent):
         path = self.targetPath
         if not path:
             return None
-        return u'/' + path[len(self.site.targetWebRootPath):].replace(u'\\', u'/')
+
+        url = path.replace(self.site.targetWebRootPath, u'').replace(u'\\', u'/')
+        if not url.startswith(u'/'):
+            url = u'/' + url
+        return url
 
 #___________________________________________________________________________________________________ GS: dataSources
     @property
@@ -444,6 +448,7 @@ class Page(ConfigsDataComponent):
         #--- PAGE DEFINITION --#
         if not pageDefsPath or not os.path.exists(pageDefsPath):
             return False
+
         try:
             data = JSON.fromFile(pageDefsPath, throwError=True)
             self._data.data = data
@@ -474,7 +479,7 @@ class Page(ConfigsDataComponent):
         steps = []
         while True:
             parentDirectory = FileUtils.createPath(directory, *steps, isDir=True)
-            if parentDirectory == self.site.containerPath:
+            if FileUtils.equivalentPaths(parentDirectory, self.site.containerPath):
                 break
             parentPath = parentDirectory + '__parent__.def'
             if os.path.exists(parentPath):
@@ -525,7 +530,7 @@ class Page(ConfigsDataComponent):
             out.insert(0, self._formatPageVarInclude([
                 'jquery',
                  '/js/sflow/jquery/jquery.js',
-                 '//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js' ]) )
+                 '//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js' ]) )
 
         self._pageVars['SCRIPTS'] = out
 
