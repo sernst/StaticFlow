@@ -141,6 +141,9 @@ class RssFileGenerator(object):
 
         # Create the entry and add a reference to this generator in the rss owners of the page
         for page in self.page.referencedPages:
+            if page.isHidden:
+                continue
+
             if not self.hasPage(page):
                 self._entries.append(RssEntry(self.site, self, page))
                 page.addRssOwner(self)

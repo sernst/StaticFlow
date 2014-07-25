@@ -94,8 +94,7 @@ class LayoutAttributeParser(object):
         align = attrs.getAsKeyword(
             TagAttributesEnum.ALIGNMENT,
             ArgsUtils.get('alignDef', None, overrides),
-            overrides
-        )
+            overrides)
 
         if align in ['right', 'r']:
             out = u'right'

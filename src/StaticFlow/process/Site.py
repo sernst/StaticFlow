@@ -496,7 +496,6 @@ class Site(ConfigsDataComponent):
 
 #___________________________________________________________________________________________________ _htmlDefinitionWalker
     def _htmlDefinitionWalker(self, args, path, names):
-        print '_htmlDefinitionWalker', args, path, names
         # If a folder definition is found, use it to populate the directory with any missing
         # definition files before proceeding
         if '__folder__.def' in names:
@@ -508,7 +507,6 @@ class Site(ConfigsDataComponent):
         for name in names:
             if name.endswith('.def') and not name.startswith('__'):
                 self._pages.create(FileUtils.createPath(path, name, isFile=True))
-        print '_htmlDefinitionWalker', 'DONE'
 
 #___________________________________________________________________________________________________ _processFolderDefinitions
     def _processFolderDefinitions(self, path):

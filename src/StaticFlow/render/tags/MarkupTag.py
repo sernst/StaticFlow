@@ -591,8 +591,7 @@ class MarkupTag(object):
         color = self.attrs.getAsColorValue(
             TagAttributesEnum.COLOR,
             defaultValue,
-            extract=extract
-        )
+            extract=extract)
 
         if not color:
             return False

@@ -5,7 +5,7 @@
 from pyaid.text.InsertCapPolicy import InsertCapPolicy
 
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
-from StaticFlow.render.error.MarkupTagError import MarkupTagError
+from StaticFlow.render.error.MarkupAttributeError import MarkupAttributeError
 from StaticFlow.render.tags.MarkupTag import MarkupTag
 
 #___________________________________________________________________________________________________ GroupTag
@@ -32,12 +32,16 @@ class GroupTag(MarkupTag):
 
         a = self.attrs
 
-        groupName = a.get(
-            TagAttributesEnum.GROUP,
-            None)
+        groupName, groupNameKey = a.get(TagAttributesEnum.GROUP, None, returnKey=True)
 
         if groupName is None:
-            MarkupTagError(tag=self).log() #TODO
+            MarkupAttributeError(
+                tag=self,
+                errorDef=MarkupAttributeError,
+                attribute=groupNameKey[0],
+                attributeData=groupNameKey[1],
+                attributeGroup=TagAttributesEnum.GROUP,
+                rawValue=None).log()
             return
 
         self._processor.groups[groupName] = a

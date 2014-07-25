@@ -80,7 +80,7 @@ class LocalImage(object):
     def path(self):
         """ The absolute path of the image on disk """
         return FileUtils.createPath(
-            self._site.sourceWebRootPath, self.urlPath.lstrip('/'), isFile=True)
+            self._site.sourceWebRootPath, self.urlPath.lstrip(u'/'), isFile=True)
 
 #===================================================================================================
 #                                                                                     P U B L I C

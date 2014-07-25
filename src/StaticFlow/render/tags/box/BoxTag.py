@@ -50,36 +50,30 @@ class BoxTag(MarkupBlockTag):
         LayoutAttributeParser.parseScale(a, True, kwargs)
         LayoutAttributeParser.parseAlignment(a, True, kwargs)
         LayoutAttributeParser.parsePadding(
-            a, True, kwargs, group=a.styleGroup, defaultValue=GeneralSizeEnum.xsmall[0]
-        )
+            a, True, kwargs, group=a.styleGroup, defaultValue=GeneralSizeEnum.xsmall[0])
 
         color = a.getAsColorValue(
             TagAttributesEnum.COLOR,
             ArgsUtils.get('colorDef', None, kwargs),
-            kwargs
-        )
+            kwargs)
 
         if not ArgsUtils.get('skipBorder', False, kwargs):
             LayoutAttributeParser.parseBorder(
                 a, True, kwargs,
                 group=a.styleGroup,
                 defaultColor=ArgsUtils.get(
-                    'borderColorDef', color.shiftColors[1] if color else None, kwargs
-                )
-            )
+                    'borderColorDef', color.shiftColors[1] if color else None, kwargs) )
 
         inline = a.getAsBool(
             TagAttributesEnum.INLINE,
             ArgsUtils.get('inlineDef', None, kwargs),
-            kwargs
-        )
+            kwargs)
 
         roundness = a.getAsEnumerated(
             TagAttributesEnum.ROUNDNESS,
             GeneralSizeEnum,
             ArgsUtils.get('roundnessDef', GeneralSizeEnum.none, kwargs),
-            kwargs
-        )
+            kwargs)
 
         #-------------------------------------------------------------------------------------------
         # BACKGROUND COLOR

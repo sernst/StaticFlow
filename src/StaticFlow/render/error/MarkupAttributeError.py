@@ -13,6 +13,11 @@ class MarkupAttributeError(MarkupError):
 #===================================================================================================
 #                                                                                       C L A S S
 
+    MISSING_ATTRIBUTE = MarkupError.ERROR_DEFINITION_NT(
+        u'missing-attribute',
+        u'Missing "#ATTR#" Attribute',
+        u'The "#ATTR#" was not found in the "#TAG#" tag.')
+
     INVALID_ATTRIBUTE = MarkupError.ERROR_DEFINITION_NT(
         u'invalid-attribute',
         u'Invalid "#ATTR#" Attribute',

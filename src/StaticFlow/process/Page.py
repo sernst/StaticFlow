@@ -1,14 +1,21 @@
 # Page.py
-# (C)2013
+# (C)2013-2014
 # Scott Ernst
 
 import os
+import re
 import datetime
 
-from pyaid.ArgsUtils import ArgsUtils
+import markdown
+
+from pyth.plugins.rtf15.reader import Rtf15Reader
+from pyth.plugins.plaintext.writer import PlaintextWriter
+
 from pyaid.config.ConfigsDict import ConfigsDict
 from pyaid.file.FileUtils import FileUtils
+from pyaid.list.ListUtils import ListUtils
 from pyaid.json.JSON import JSON
+from pyaid.string.StringUtils import StringUtils
 from pyaid.time.TimeUtils import TimeUtils
 from pyaid.web.mako.MakoRenderer import MakoRenderer
 
@@ -59,6 +66,7 @@ class Page(ConfigsDataComponent):
         self._parentPage        = parentPage
         self._rssGenerator      = None
         self._rssOwners         = []
+        self._textInserts       = dict()
 
         self._definitionPath    = FileUtils.cleanupPath(definitionPath, isFile=True)
         self._sourcePath        = sourcePath
@@ -231,9 +239,9 @@ class Page(ConfigsDataComponent):
     @property
     def sourceFolder(self):
         """ [GET] Folder where the source file resides """
-        if self.sourcePath:
-            return SiteProcessUtils.getFolderParts(
-                self.sourcePath, self.site.sourceWebRootPath)
+        source = self.sourcePath
+        if source:
+            return SiteProcessUtils.getFolderParts(source, self.site.sourceWebRootPath)
         return None
 
 #___________________________________________________________________________________________________ GS: date
@@ -334,8 +342,113 @@ class Page(ConfigsDataComponent):
         """ [GET] Whether or not this page has been processed """
         return self._isProcessed
 
+#___________________________________________________________________________________________________ GS: isHidden
+    @property
+    def isHidden(self):
+        """ Specifies whether or not the page is hidden within the site. Hidden pages do not appear
+            in rss feeds or sitemaps. """
+        return self.get('HIDDEN', False)
+
 #===================================================================================================
 #                                                                                     P U B L I C
+
+#___________________________________________________________________________________________________ loadTextInsert
+    def loadTextInsert(self, subPath =None, throwMissingError =False):
+        extensions = [u'.txt', u'.rtf']
+        if not subPath:
+            subPath = os.path.basename(self.sourcePath).rsplit(u'.', 1)[0]
+        elif StringUtils.ends(subPath, extensions):
+            subPath = subPath[:-4]
+
+        if subPath in self._textInserts:
+            return subPath
+
+        #-------------------------------------------------------------------------------------------
+        # LOAD FILE DATA
+        #       If no data exists yet, load the file and and populate the data entries
+        sourcePath = FileUtils.createPath(
+            FileUtils.getDirectoryOf(self.sourcePath), subPath, isFile=True)
+
+        sourceFilePath = None
+        for extension in extensions:
+            if os.path.exists(sourcePath + extension):
+                sourceFilePath = sourcePath + extension
+                break
+
+        # Handle no path found
+        if sourceFilePath is None:
+            if throwMissingError:
+                raise Exception, 'Missing Text Insert File [LOCATION: %s | PATH: %s]' % (
+                    subPath, sourcePath)
+            return None
+
+        with open(sourceFilePath, 'rb') as f:
+            if sourceFilePath.endswith(u'.txt'):
+                source = f.read()
+            else:
+                doc = Rtf15Reader.read(f)
+                source = PlaintextWriter.write(doc).getvalue()
+            source = StringUtils.strToUnicode(source)
+
+        parts = source.split(u'\n::')
+        data = dict()
+
+        paragraphBreaksRegEx = re.compile(u'\n+\s*\n+')
+
+        for p in parts:
+            p = p.replace(u'\r',u'').lstrip(u':')
+            sepIndex = p.find(u'::')
+            spaceIndex = p.find(u' ')
+            if sepIndex == -1 or (spaceIndex != -1 and spaceIndex < sepIndex):
+                data['__DEFAULT__'] = StringUtils.htmlEscape(p.strip())
+                break
+
+            pieces = p.split(u'::')
+            definitions = pieces[0].split(u'|')
+            name = definitions[0].upper()
+            text = StringUtils.htmlEscape(pieces[-1].strip())
+            flags = []
+            for d in definitions[1:] if len(definitions) > 1 else []:
+                flags.append(d.lower())
+
+            if ListUtils.hasAny(flags, [u'p', u'para', u'paragraph', u'paragraphs']):
+                text = paragraphBreaksRegEx.sub(u'\n', text).replace(u'\n\n', u'\n')
+                paragraphs = text.split(u'\n')
+                result = []
+                for para in paragraphs:
+                    result.append(u'<p class="sfml-p">' + para + u'</p>')
+                text = u''.join(result)
+            elif ListUtils.hasAny(flags, [u'bl', u'bullets', u'blist', u'bulletlist', u'bulletedlist']):
+                text = paragraphBreaksRegEx.sub(u'\n', text).replace(u'\n\n', u'\n')
+                bullets = text.split(u'\n')
+                result = []
+                for item in bullets:
+                    result.append(u'<li>' + item + u'</li>')
+                text = u'<ul>' + u''.join(result) + u'</ul>'
+            elif ListUtils.hasAny(flags, [u'md', u'markdown', u'mdown']):
+                text = markdown.markdown(text)
+
+            data[name] = text
+
+        self._textInserts[subPath] = data
+        return subPath
+
+#___________________________________________________________________________________________________ getTextInsert
+    def getTextInsert(self, subPath =None, section =None, throwMissingError =False):
+        if not section:
+            section = '__DEFAULT__'
+        section = section.upper()
+
+        subPath = self.loadTextInsert(subPath, throwMissingError=throwMissingError)
+        if subPath is None or not subPath in self._textInserts:
+            return None
+
+        data = self._textInserts[subPath]
+        if section in data:
+            return data[section]
+        elif throwMissingError:
+            raise Exception, 'Missing Text Insert [PATH: %s | SECTION: %s)' % (subPath, section)
+        return None
 
 #___________________________________________________________________________________________________ addRssOwner
     def addRssOwner(self, rssGenerator):

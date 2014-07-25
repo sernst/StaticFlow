@@ -36,8 +36,8 @@ class SFlowApiManager extends DataApiManager
         ### Creates an APIManager module instance. ###
         super()
 
-        @_renderLoopTimer = new DataTimer(200, 1, false, @_handleRenderLoop)
-        @_mouseState      = null
+        @renderLoopTimer = new DataTimer(100, 1, null, @_handleRenderLoop)
+        @_mouseState = null
 
         @_scroller   = $('.sf-scrollContainer')
         @styles      = new StyleManager()
@@ -210,22 +210,26 @@ class SFlowApiManager extends DataApiManager
 
 #___________________________________________________________________________________________________ _handleRenderLoop
     _handleRenderLoop: (dt) =>
+        alert('DOM:render')
+
         if @_mouseState != 'down'
             Renderer.renderQueuedItems()
 
             for module in @_autoResizers
                 module.resize()
 
+        @dispatchEvent('DOM:Render')
+
         dt.restart()
 
 #___________________________________________________________________________________________________ _handleMouseEvent
     _handleMouseEvent: (event) =>
         if event.type == 'mousedown'
-            @_renderLoopTimer.stop()
+            @renderLoopTimer.stop()
             @_mouseState = 'down'
             return
 
-        if @_renderLoopTimer.data()
-            @_renderLoopTimer.restart()
+        if @renderLoopTimer.data()
+            @renderLoopTimer.restart()
 
         @_mouseState = null

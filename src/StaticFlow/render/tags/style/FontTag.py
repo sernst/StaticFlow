@@ -3,6 +3,7 @@
 # Scott Ernst
 
 from pyaid.enum.FontFamilyEnum import FontFamilyEnum
+from StaticFlow.render.attributes.InsertAttributeParser import InsertAttributeParser
 
 from StaticFlow.render.enum.FontFamilyKeywordEnum import FontFamilyKeywordEnum
 from StaticFlow.render.enum.GeneralSizeEnum import GeneralSizeEnum
@@ -18,7 +19,7 @@ class FontTag(MarkupBlockTag):
 #                                                                                       C L A S S
 
     TAG            = 'font'
-    TEMPLATE       = 'markup/spanBase.mako'
+    TEMPLATE       = 'markup/text/font.mako'
     STRIP_POLICY   = MarkupBlockTag.STRIP_NEWLINES
     NEWLINE_POLICY = MarkupBlockTag.BREAK_ON_NEWLINES
     PRIMARY_ATTR   = TagAttributesEnum.FONT[0]
@@ -40,60 +41,57 @@ class FontTag(MarkupBlockTag):
         t = TagAttributesEnum
         return MarkupBlockTag.getAttributeList() + t.NAME + t.COLOR + t.SIZE + t.FONT + t.SPACING + \
                t.LINE_SPACING + t.LETTER_SPACING + t.WORD_SPACING + t.BOLD + t.ITALIC + \
-               t.ALIGNMENT + t.SCALE
+               t.ALIGNMENT + t.SCALE + t.TEXT + t.TEXT_PATH + t.TEXT_SECTION + t.SECTION \
+               + t.PATH
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
 
 #___________________________________________________________________________________________________ _renderImpl
     def _renderImpl(self, **kwargs):
-        a   = self.attrs
+        a = self.attrs
+
+        result = InsertAttributeParser.parseText(self.attrs)
+        self.attrs.render['text'] = u'' if not result else result
+
         self._addColorToGroup(a.styleGroup)
         LayoutAttributeParser.parseScale(a, True, kwargs, useSizeKeys=True)
 
         if LayoutAttributeParser.parseAlignment(a, True, kwargs) is not None:
             self._renderTemplate = 'markup/divBase.mako'
 
-        bold = a.getAsBool(
-            TagAttributesEnum.BOLD,
-            None
-        )
+        bold = a.getAsBool(TagAttributesEnum.BOLD, None)
 
-        italic = a.getAsBool(
-            TagAttributesEnum.ITALIC,
-            None
-        )
+        italic = a.getAsBool(TagAttributesEnum.ITALIC, None )
 
         font = a.getAsEnumerated(
             TagAttributesEnum.FONT,
             FontFamilyKeywordEnum,
-            None
-        )
+            None)
+
         fontFamily = getattr(FontFamilyEnum, font, None) if font else None
 
         lineSpacing = a.getAsEnumerated(
             TagAttributesEnum.LINE_SPACING + TagAttributesEnum.SPACING,
             GeneralSizeEnum,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
+
         if lineSpacing is None:
             lineSpacing = a.getAsUnit(
                 TagAttributesEnum.LINE_SPACING + TagAttributesEnum.SPACING,
-                None
-            )
+                None)
 
         letterSpacing = a.getAsEnumerated(
             TagAttributesEnum.LETTER_SPACING,
             GeneralSizeEnum,
             None,
-            allowFailure=True
-        )
+            allowFailure=True)
+
         if letterSpacing is None:
             letterSpacing = a.getAsUnit(
                 TagAttributesEnum.LETTER_SPACING,
-                None
-            )
+                None)
 
         wordSpacing = a.getAsEnumerated(
             TagAttributesEnum.WORD_SPACING,
@@ -186,7 +184,7 @@ class FontTag(MarkupBlockTag):
                 a.styles.add('font-weight', 'normal', a.styleGroup)
 
         if isinstance(italic, bool):
-            if bold:
+            if italic:
                 a.classes.add('sfml-i', a.styleGroup)
             else:
                 a.styles.add('font-style', 'normal', a.styleGroup)

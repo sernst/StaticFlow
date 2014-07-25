@@ -77,6 +77,8 @@ class TagAttributesEnum(object):
 
     FILL            = ['fill', 'f']
 
+    FULL            = ['full', 'f']
+
     FIXED           = ['fixed', 'fix']
 
     FONT            = ['font', 'font-family', 'fnt']
@@ -105,7 +107,7 @@ class TagAttributesEnum(object):
 
     INLINE          = ['inline']
 
-    ITALIC          = ['italic']
+    ITALIC          = ['italic', 'italics']
 
     LABEL           = ['label']
 
@@ -155,9 +157,17 @@ class TagAttributesEnum(object):
 
     NAME            = ['name']
 
+    OFFSET          = ['offest']
+
     ON              = ['on']
 
     PADDING         = ['padding', 'pad']
+
+    PATH            = ['path']
+
+    PULL            = ['pull']
+
+    PUSH            = ['push']
 
     RAGGED          = ['ragged']
 
@@ -172,6 +182,8 @@ class TagAttributesEnum(object):
     ROW_REACH       = ['rowreach', 'row_reach']
 
     SAME_HEIGHT     = ['sameheight', 'equalheight']
+
+    SECTION         = ['section', 'sect']
 
     SET             = ['sets', 'set']
 
@@ -213,7 +225,11 @@ class TagAttributesEnum(object):
 
     TARGET          = ['target']
 
-    TEXT            = ['text']
+    TEXT            = ['text', 'txt']
+
+    TEXT_PATH       = ['textpath', 'txtpath', 'tpath']
+
+    TEXT_SECTION    = ['textsection', 'txtsection', 'txtsect', 'tsection']
 
     THEME           = ['theme', 'th']
 

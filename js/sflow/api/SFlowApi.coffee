@@ -40,6 +40,8 @@ class SFlowApi
         # Class registry
         @r = sf.r
 
+        @_loopInterval = null
+
         window.SFLOW = this
         return
 
@@ -64,7 +66,7 @@ class SFlowApi
             )
         sf.dispatchEvent({id:'DOM:complete', oneShot:true})
 
-        # Intialize the Zurb Foundation framework
+        # Initialize the Zurb Foundation framework
         $(document).foundation()
 
         $(window).resize(() ->
@@ -79,6 +81,8 @@ class SFlowApi
             sf.dispatchEvent({id:'PAGE:hashChange', data:location.hash})
 
         sf.dispatchEvent({id:'API:ready', oneShot:true})
+
+        sf._loopInterval = setInterval(sf._handleRenderLoop, 100)
         return
 
 #___________________________________________________________________________________________________ resize
@@ -115,9 +119,9 @@ class SFlowApi
         @_loadDiscus()
 
         # Update the sticky footer
-        footerHeight = $('#sf_footer').height()
-        $('#sf_footer_push').height(footerHeight)
-        $('#sf_wrapper').css('margin-bottom', footerHeight + 'px')
+        #footerHeight = $('#sf_footer').height()
+        #$('#sf_footer_push').height(footerHeight)
+        #$('#sf_wrapper').css('margin-bottom', footerHeight + 'px')
 
         SFLOW.resize(dom)
         return
@@ -169,3 +173,10 @@ class SFlowApi
 
         e.append(script)
         return
+
+#===================================================================================================
+#                                                                                 H A N D L E R S
+
+#___________________________________________________________________________________________________ _handleRenderLoop
+    _handleRenderLoop: () ->
+        SFLOW.dispatchEvent('DOM:render')

@@ -1,11 +1,12 @@
 # sflow.util.time.DataTimer.coffee
-# Vizme, Inc. (C)2011-2012
+# (C)2011-2013
 # Scott Ernst
 
 #import sflow.util.Types
 
-# A DataTimer in an AS3 style
+#___________________________________________________________________________________________________ DataTimer
 class DataTimer
+    # A DataTimer in an AS3 style
 
 #===================================================================================================
 #                                                                                       C L A S S
@@ -99,7 +100,7 @@ class DataTimer
             @stop()
 
         hasInterval = Types.isFunction(@_intervalCallback)
-        f           = if hasInterval then @_intervalCallback else @_completeCallback
+        f = if hasInterval then @_intervalCallback else @_completeCallback
 
         if @_repeatCount == 0
             f(this)

@@ -46,6 +46,7 @@ from StaticFlow.render.tags.text.ParagraphTag import ParagraphTag
 from StaticFlow.render.tags.text.SubscriptTag import SubscriptTag
 from StaticFlow.render.tags.text.SuperscriptTag import SuperscriptTag
 from StaticFlow.render.tags.text.SymbolTag import SymbolTag
+from StaticFlow.render.tags.text.TextTag import TextTag
 
 #___________________________________________________________________________________________________ TagDefinitions
 class TagDefinitions(object):
@@ -127,6 +128,8 @@ class TagDefinitions(object):
     SUMMARY         = SummaryTag
 
     SUPER           = SuperscriptTag
+
+    TEXT            = TextTag
 
     TITLE           = TitleTag
 

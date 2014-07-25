@@ -248,10 +248,20 @@ class AttributeData(DomRenderData):
             out[key] = value[0]
         return out
 
+#___________________________________________________________________________________________________ GS: log
+    @property
+    def log(self):
+        return self._tag.log
+
 #___________________________________________________________________________________________________ GS: tag
     @property
     def tag(self):
         return self._tag
+
+#___________________________________________________________________________________________________ GS: processor
+    @property
+    def processor(self):
+        return self._processor
 
 #___________________________________________________________________________________________________ GS: explicitAccent
     @property

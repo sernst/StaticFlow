@@ -2,8 +2,6 @@
 # (C)2012-2013
 # Scott Ernst
 
-import math
-
 from StaticFlow.render.enum.GeneralSizeEnum import GeneralSizeEnum
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.tags.box.BoxTag import BoxTag
@@ -25,7 +23,7 @@ class ZurbRowTag(BoxTag):
     @classmethod
     def getAttributeList(cls):
         t = TagAttributesEnum
-        return BoxTag.getAttributeList()
+        return BoxTag.getAttributeList() + t.TYPE
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -33,6 +31,15 @@ class ZurbRowTag(BoxTag):
 #___________________________________________________________________________________________________ _renderImpl
     def _renderImpl(self, **kwargs):
         a = self.attrs
+
         a.classes.add('row')
+        rowType, rowTypeKey = a.get(TagAttributesEnum.TYPE, returnKey=True)
+        if rowType is not None:
+            rowType = rowType.lower()
+            if rowType in ['f', 'full']:
+                a.classes.add('fullWidth')
+            elif rowType in ['l', 'large']:
+                a.classes.add('largeWidth')
+
         BoxTag._renderImpl(self, paddingDef=GeneralSizeEnum.none[0], **kwargs)
 

@@ -24,23 +24,42 @@ class ZurbBoxTag(BoxTag):
     @classmethod
     def getAttributeList(cls):
         t = TagAttributesEnum
-        return BoxTag.getAttributeList() + t.SMALL + t.SIZE + t.CENTER
+        return BoxTag.getAttributeList() + t.SMALL + t.SIZE + t.CENTER + t.TYPE + t.PUSH + t.PULL \
+            + t.OFFSET
 
 #___________________________________________________________________________________________________ addZurbColumnClasses
     @classmethod
     def addZurbColumnClasses(cls, attrs, target =None, **kwargs):
         a = attrs
+
+        pull = 0
+        push = 0
+        offset = a.getAsInt(TagAttributesEnum.OFFSET)
+        if offset is None:
+            push = a.getAsInt(TagAttributesEnum.PUSH, 0)
+            pull = a.getAsInt(TagAttributesEnum.PULL, 0)
+        elif offset > 0:
+            push = offset
+        elif offset < 0:
+            pull = abs(offset)
+
+        if pull > 0:
+            a.classes.add('pull-' + str(pull))
+        if push > 0:
+            a.classes.add('push-' + str(push))
+
         isCentered = a.getAsBool(
             TagAttributesEnum.CENTER,
             False,
             kwargs)
 
-        isLarge = not a.getAsBool(
-            TagAttributesEnum.SMALL,
-            False,
-            kwargs)
+        sizeType = a.get(TagAttributesEnum.TYPE, u'L')
+        try:
+            sizeType = sizeType.upper()[0]
+        except Exception, err:
+            sizeType = u'L'
 
-        prefix = 'large' if isLarge else 'small'
+        prefix = {'L':'large', 'M':'medium', 'S':'small'}[sizeType]
 
         size = a.getAsInt(
             TagAttributesEnum.SIZE,

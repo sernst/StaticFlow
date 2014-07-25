@@ -3,6 +3,7 @@
 # Scott Ernst
 
 from pyaid.text.InsertCapPolicy import InsertCapPolicy
+from StaticFlow.render.attributes.InsertAttributeParser import InsertAttributeParser
 from StaticFlow.render.enum.TagAttributesEnum import TagAttributesEnum
 from StaticFlow.render.tags.MarkupBlockTag import MarkupBlockTag
 
@@ -50,7 +51,9 @@ class HeaderTag(MarkupBlockTag):
 #___________________________________________________________________________________________________ getAttributeList
     @classmethod
     def getAttributeList(cls):
-        return MarkupBlockTag.getAttributeList() + TagAttributesEnum.LEVEL
+        TAE = TagAttributesEnum
+        return MarkupBlockTag.getAttributeList() + TAE.LEVEL + TAE.TEXT_SECTION + TAE.SECTION \
+            + TAE.PATH + TAE.TEXT_PATH + TAE.COLOR
 
 #===================================================================================================
 #                                                                               P R O T E C T E D
@@ -59,9 +62,14 @@ class HeaderTag(MarkupBlockTag):
     def _renderImpl(self, **kwargs):
         a = self.attrs
 
+        self._addColorToGroup()
+
         a.render['level'] = str(a.getAsInt(
             TagAttributesEnum.LEVEL,
             1, kwargs))
+
+        result = InsertAttributeParser.parseText(self.attrs)
+        self.attrs.render['text'] = u'' if not result else result
 
         # self._processor.addAnchor({'id':a.id.get(), 'lbl':a.content, 'lvl':level})
 

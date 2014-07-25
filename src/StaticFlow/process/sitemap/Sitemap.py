@@ -63,6 +63,9 @@ class Sitemap(object):
 #___________________________________________________________________________________________________ add
     def add(self, page):
         """ Adds the specified page to the Sitemap's list of entries if it is not already listed """
+        if  page.isHidden:
+            return
+
         if not self.has(page):
             self._entries.append(SitemapEntry(self, page))
 

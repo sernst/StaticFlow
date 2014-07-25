@@ -97,7 +97,7 @@ class ImageTag(MarkupTag):
         a.classes.add('sfml-imageBox', 'imageBox')
 
         if a.getAsBool(TagAttributesEnum.INLINE, False, kwargs, True):
-            a.styles.add({'display':'inline-block'}, 'imageBox')
+            a.styles.add({'display':'inline-block'})
 
         #--- HORIZONTAL ALIGNMENT
         #       Set the alignment of the image within the box, which defaults sto center.

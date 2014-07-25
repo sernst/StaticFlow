@@ -4,5 +4,8 @@ html, body {height: 100%; margin:0;}
 #sf_footer, #sf_push {clear: both;}
 
 /* SFML Markup */
-sfml-b { font-weight:bold; }
-sfml-i { font-style: italic; }
+.sfml-b { font-weight:bold; }
+.sfml-i { font-style: italic; }
+
+.row.fullWidth { max-width: none; }
+.row.largeWidth { max-width: 80em; }

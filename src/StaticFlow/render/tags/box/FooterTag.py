@@ -79,4 +79,3 @@ class FooterTag(MarkupBlockTag):
                 self.useBackground()
 
         a.classes.add('sfml-push', a.styleGroup)
-

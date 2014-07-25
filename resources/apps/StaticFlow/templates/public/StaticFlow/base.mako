@@ -47,7 +47,6 @@
 <body style="padding:0;margin:0">
 <div id="sf_wrapper">
 ${next.body() | n}
-<div id="sf_footer_push"></div>
 </div>
 <div id="sf_footer" style="display:none;">${mr.page.footerDom | n}</div>
 
