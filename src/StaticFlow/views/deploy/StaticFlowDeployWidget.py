@@ -86,8 +86,9 @@ class StaticFlowDeployWidget(PyGlassWidget):
 
         thread = SiteDeploymentThread(self, rootPath=rootPath, deployType=deployType)
         self._serverThread = thread
-        thread.logSignal.signal.connect(self._handleLogData)
-        thread.completeSignal.signal.connect(self._handleDeploymentExecutionComplete)
+        thread.execute(
+            logCallback=self._handleLogData,
+            callback=self._handleDeploymentExecutionComplete)
         thread.start()
         self.mainWindow.updateStatusBar(u'Deployment in progress')
 
@@ -108,18 +109,19 @@ class StaticFlowDeployWidget(PyGlassWidget):
         self.mainWindow.updateStatusBar()
 
 #___________________________________________________________________________________________________ _handleLogData
-    def _handleLogData(self, data):
+    def _handleLogData(self, event):
+        data = event.get('message')
         self._statusText.append(unicode(data))
         self._statusText.moveCursor(QtGui.QTextCursor.End)
         self._statusText.moveCursor(QtGui.QTextCursor.StartOfLine)
 
 #___________________________________________________________________________________________________ _handleDeploymentExecutionComplete
-    def _handleDeploymentExecutionComplete(self, response):
+    def _handleDeploymentExecutionComplete(self, event):
         self._serverThread.completeSignal.signal.disconnect(self._handleDeploymentExecutionComplete)
         self._serverThread.logSignal.signal.disconnect(self._handleLogData)
         self._serverThread = None
 
-        if response['response']:
+        if not event.target.success:
             PyGlassBasicDialogManager.openOk(
                 parent=self,
                 header=u'Deployment Failed',
